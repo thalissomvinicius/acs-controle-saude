@@ -6,6 +6,7 @@ import {
   CalendarCheck,
   ClipboardList,
   Download,
+  Edit3,
   FileSpreadsheet,
   HeartPulse,
   Home,
@@ -17,6 +18,7 @@ import {
   Settings,
   ShieldCheck,
   Syringe,
+  Trash2,
   UserRound,
   UsersRound,
   X,
@@ -441,6 +443,7 @@ function App() {
   const [moradores, setMoradores] = usePersistentState('acs:moradores', moradoresIniciais)
   const [visitas, setVisitas] = usePersistentState('acs:visitas', visitasIniciais)
   const [grupoAtivo, setGrupoAtivo] = useState('Vacinas pendentes')
+  const [logradouroEditando, setLogradouroEditando] = useState<Logradouro | null>(null)
 
   function navegarPara(proximaTela: Tela) {
     setTela(proximaTela)
@@ -688,35 +691,61 @@ function App() {
 
     if (supabase) {
       const usuarioAtual = await obterUsuarioAutenticado()
-      const { data, error } = await supabase
-        .from('logradouros')
-        .insert({
-          usuario_id: usuarioAtual,
-          bairro: novo.bairro,
-          nome: novo.nome,
-          tipo: novo.tipo,
-          quantidade_imoveis: novo.quantidadeImoveis,
-          observacoes: novo.observacoes,
-        })
-        .select()
-        .single()
+      const payload = {
+        usuario_id: usuarioAtual,
+        bairro: novo.bairro,
+        nome: novo.nome,
+        tipo: novo.tipo,
+        quantidade_imoveis: novo.quantidadeImoveis,
+        observacoes: novo.observacoes,
+      }
+      const query = logradouroEditando
+        ? supabase.from('logradouros').update(payload).eq('id', logradouroEditando.id).select().single()
+        : supabase.from('logradouros').insert(payload).select().single()
+      const { data, error } = await query
       if (error) {
         alert(error.message)
         return
       }
-      setLogradouros((atuais) => [...atuais, mapLogradouro(data)])
+      const salvo = mapLogradouro(data)
+      setLogradouros((atuais) => logradouroEditando ? atuais.map((item) => String(item.id) === String(salvo.id) ? salvo : item) : [...atuais, salvo])
+      setLogradouroEditando(null)
       event.currentTarget.reset()
       return
     }
 
-    setLogradouros((atuais) => [
-      ...atuais,
-      {
-        id: Date.now(),
-        ...novo,
-      },
-    ])
+    setLogradouros((atuais) =>
+      logradouroEditando
+        ? atuais.map((item) => String(item.id) === String(logradouroEditando.id) ? { ...item, ...novo } : item)
+        : [
+            ...atuais,
+            {
+              id: Date.now(),
+              ...novo,
+            },
+          ],
+    )
+    setLogradouroEditando(null)
     event.currentTarget.reset()
+  }
+
+  async function excluirLogradouro(id: EntityId) {
+    const confirmar = window.confirm('Excluir este logradouro? Famílias vinculadas podem impedir a exclusão.')
+    if (!confirmar) return
+
+    if (supabase) {
+      await obterUsuarioAutenticado()
+      const { error } = await supabase.from('logradouros').delete().eq('id', id)
+      if (error) {
+        alert(error.message)
+        return
+      }
+    }
+
+    setLogradouros((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
+    if (logradouroEditando && String(logradouroEditando.id) === String(id)) {
+      setLogradouroEditando(null)
+    }
   }
 
   async function adicionarFamilia(event: FormEvent<HTMLFormElement>) {
@@ -1120,16 +1149,23 @@ function App() {
           <section className="screen two-column animate-in">
             <CrudCard title="Cadastrar logradouro">
               <form className="form-grid" onSubmit={adicionarLogradouro}>
-                <input name="bairro" placeholder="Bairro" required />
-                <input name="nome" placeholder="Logradouro" required />
-                <select name="tipo" defaultValue="Rua" aria-label="Tipo de logradouro">
+                <input name="bairro" placeholder="Bairro" defaultValue={logradouroEditando?.bairro ?? ''} required />
+                <input name="nome" placeholder="Logradouro" defaultValue={logradouroEditando?.nome ?? ''} required />
+                <select name="tipo" defaultValue={logradouroEditando?.tipo ?? 'Rua'} aria-label="Tipo de logradouro" key={logradouroEditando?.id ?? 'novo-logradouro'}>
                   <option>Rua</option>
                   <option>Travessa</option>
                   <option>Avenida</option>
                 </select>
-                <input name="quantidadeImoveis" type="number" placeholder="Imóveis" required />
-                <textarea name="observacoes" placeholder="Observações" />
-                <button className="primary-button">Salvar</button>
+                <input name="quantidadeImoveis" type="number" placeholder="Imóveis" defaultValue={logradouroEditando?.quantidadeImoveis ?? ''} required />
+                <textarea name="observacoes" placeholder="Observações" defaultValue={logradouroEditando?.observacoes ?? ''} />
+                <div className="form-actions">
+                  <button className="primary-button">{logradouroEditando ? 'Atualizar' : 'Salvar'}</button>
+                  {logradouroEditando && (
+                    <button className="secondary-button" type="button" onClick={() => setLogradouroEditando(null)}>
+                      Cancelar
+                    </button>
+                  )}
+                </div>
               </form>
             </CrudCard>
             <CrudCard title="Lista">
@@ -1138,7 +1174,18 @@ function App() {
                   <article key={item.id} className="family-card">
                     <div className="family-head">
                       <MapPinned size={18} />
-                      <strong>{item.tipo} {item.nome}</strong>
+                      <div>
+                        <strong>{item.tipo} {item.nome}</strong>
+                        <small>{item.bairro} · {item.quantidadeImoveis} imóveis</small>
+                      </div>
+                      <div className="card-actions">
+                        <button className="icon-action" type="button" onClick={() => setLogradouroEditando(item)} aria-label="Editar logradouro">
+                          <Edit3 size={17} />
+                        </button>
+                        <button className="icon-action danger" type="button" onClick={() => excluirLogradouro(item.id)} aria-label="Excluir logradouro">
+                          <Trash2 size={17} />
+                        </button>
+                      </div>
                     </div>
                   </article>
                 ))}
