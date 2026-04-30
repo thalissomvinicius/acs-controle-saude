@@ -511,6 +511,18 @@ function App() {
     setVisitas((visitasDb.data ?? []).map(mapVisita))
   }, [setFamilias, setLogradouros, setMoradores, setVisitas])
 
+  async function obterUsuarioAutenticado() {
+    if (!supabase) return ''
+    const { data, error } = await supabase.auth.getUser()
+    if (error || !data.user) {
+      throw new Error('Sessão expirada. Saia e entre novamente.')
+    }
+    if (data.user.id !== usuarioId) {
+      setUsuarioId(data.user.id)
+    }
+    return data.user.id
+  }
+
   useEffect(() => {
     if (!supabase) {
       return
@@ -674,11 +686,12 @@ function App() {
       observacoes: String(dados.get('observacoes')),
     }
 
-    if (supabase && usuarioId) {
+    if (supabase) {
+      const usuarioAtual = await obterUsuarioAutenticado()
       const { data, error } = await supabase
         .from('logradouros')
         .insert({
-          usuario_id: usuarioId,
+          usuario_id: usuarioAtual,
           bairro: novo.bairro,
           nome: novo.nome,
           tipo: novo.tipo,
@@ -723,11 +736,12 @@ function App() {
       status: String(dados.get('status')) as StatusVisita,
     }
 
-    if (supabase && usuarioId) {
+    if (supabase) {
+      const usuarioAtual = await obterUsuarioAutenticado()
       const { data, error } = await supabase
         .from('familias')
         .insert({
-          usuario_id: usuarioId,
+          usuario_id: usuarioAtual,
           logradouro_id: nova.logradouroId,
           numero_casa: nova.numero,
           tipo_imovel: nova.tipoImovel,
@@ -792,11 +806,12 @@ function App() {
       observacoes: String(dados.get('observacoes')),
     }
 
-    if (supabase && usuarioId) {
+    if (supabase) {
+      const usuarioAtual = await obterUsuarioAutenticado()
       const { data, error } = await supabase
         .from('moradores')
         .insert({
-          usuario_id: usuarioId,
+          usuario_id: usuarioAtual,
           familia_id: novo.familiaId,
           nome_completo: novo.nome,
           cpf: novo.cpf,
@@ -826,7 +841,7 @@ function App() {
       const moradorSalvo = mapMorador(data)
       if (novo.remedioControlado && novo.medicamento) {
         await supabase.from('medicamentos').insert({
-          usuario_id: usuarioId,
+          usuario_id: usuarioAtual,
           morador_id: moradorSalvo.id,
           nome_medicamento: novo.medicamento,
           uso_continuo: true,
@@ -867,9 +882,10 @@ function App() {
       status: String(dados.get('status')) as StatusRegistro,
     }
 
-    if (supabase && usuarioId) {
+    if (supabase) {
+      const usuarioAtual = await obterUsuarioAutenticado()
       const { error } = await supabase.from('visitas').insert({
-        usuario_id: usuarioId,
+        usuario_id: usuarioAtual,
         familia_id: nova.familiaId,
         data_visita: nova.data,
         acs_responsavel: nova.acs,
@@ -886,7 +902,7 @@ function App() {
         alert(error.message)
         return
       }
-      await carregarDados(usuarioId)
+      await carregarDados(usuarioAtual)
       event.currentTarget.reset()
       return
     }
