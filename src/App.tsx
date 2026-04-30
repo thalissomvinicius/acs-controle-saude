@@ -443,6 +443,12 @@ function App() {
   const [visitas, setVisitas] = usePersistentState('acs:visitas', visitasIniciais)
   const [grupoAtivo, setGrupoAtivo] = useState('Vacinas pendentes')
 
+  function navegarPara(proximaTela: Tela) {
+    setTela(proximaTela)
+    setMenuAberto(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const garantirPerfil = useCallback(async (user: SupabaseUser) => {
     if (!supabase || !user.email) return
     const nome = user.email.split('@')[0]
@@ -1035,8 +1041,7 @@ function App() {
                 key={item.id}
                 className={tela === item.id ? 'active' : ''}
                 onClick={() => {
-                  setTela(item.id)
-                  setMenuAberto(false)
+                  navegarPara(item.id)
                 }}
               >
                 <Icon size={20} />
@@ -1050,6 +1055,7 @@ function App() {
           </button>
         </nav>
       </aside>
+      {menuAberto && <button className="menu-backdrop mobile-only" onClick={() => setMenuAberto(false)} aria-label="Fechar menu" />}
 
       <main className="content">
         <header className="topbar">
@@ -1105,7 +1111,7 @@ function App() {
               {indicadores.map((card) => {
                 const Icon = card.icon
                 return (
-                  <button key={card.label} className={`metric-card ${card.status}`} onClick={() => setTela('indicadores')}>
+                  <button key={card.label} className={`metric-card ${card.status}`} onClick={() => navegarPara('indicadores')}>
                     <span>
                       <Icon size={22} />
                     </span>
@@ -1409,7 +1415,7 @@ function App() {
           ].map((item) => {
             const Icon = item.icon
             return (
-              <button key={item.id} className={tela === item.id ? 'active' : ''} onClick={() => setTela(item.id)}>
+              <button key={item.id} className={tela === item.id ? 'active' : ''} onClick={() => navegarPara(item.id)}>
                 <Icon size={19} />
                 <span>{item.label}</span>
               </button>

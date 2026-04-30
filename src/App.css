@@ -660,6 +660,7 @@ textarea:focus {
 }
 
 .mobile-only,
+.menu-backdrop,
 .mobile-bottom-nav {
   display: none;
 }
@@ -682,6 +683,7 @@ textarea:focus {
     transform: translateX(-105%);
     transition: transform 0.2s ease;
     box-shadow: var(--shadow-soft);
+    z-index: 30;
   }
 
   .sidebar.open {
@@ -690,6 +692,20 @@ textarea:focus {
 
   .mobile-only {
     display: inline-flex;
+  }
+
+  .menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: rgba(13, 63, 37, 0.28);
+    backdrop-filter: blur(2px);
   }
 
   .icon-button {
@@ -712,12 +728,17 @@ textarea:focus {
   }
 
   .search-box {
-    width: 40px;
+    width: min(46vw, 176px);
     height: 40px;
-    flex: 0 0 40px;
-    justify-content: center;
-    overflow: hidden;
+    flex: 0 1 176px;
+    justify-content: flex-start;
+    overflow: visible;
     border-radius: 15px;
+  }
+
+  .search-box input {
+    min-width: 0;
+    font-size: 0.82rem;
   }
 
   .search-box:focus-within {
@@ -726,6 +747,7 @@ textarea:focus {
     right: 14px;
     top: 66px;
     width: auto;
+    height: 44px;
     background: var(--white);
     color: var(--green-800);
     box-shadow: var(--shadow-soft);
