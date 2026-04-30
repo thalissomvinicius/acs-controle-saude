@@ -835,6 +835,11 @@ function App() {
       observacoes: String(dados.get('observacoes')),
     }
 
+    if (!novo.nascimento || novo.nascimento === 'null') {
+      alert('Informe a data de nascimento do morador.')
+      return
+    }
+
     if (supabase) {
       const usuarioAtual = await obterUsuarioAutenticado()
       const { data, error } = await supabase
@@ -1235,7 +1240,18 @@ function App() {
               <form className="form-grid" onSubmit={adicionarMorador}>
                 <input name="nome" placeholder="Nome" required />
                 <input name="cpf" placeholder="CPF" required />
-                <select name="familiaId" required aria-label="Selecionar família">
+                <input name="cns" placeholder="CNS" />
+                <input name="nis" placeholder="NIS" />
+                <input name="nascimento" type="date" required />
+                <select name="sexo" defaultValue="Feminino" aria-label="Sexo">
+                  <option>Feminino</option>
+                  <option>Masculino</option>
+                  <option>Outro</option>
+                </select>
+                <input name="telefone" placeholder="Telefone" />
+                <input name="peso" placeholder="Peso" />
+                <input name="altura" placeholder="Altura" />
+                <select name="familiaId" required aria-label="Selecionar fam?lia">
                   {familias.map((item) => (
                     <option key={item.id} value={item.id}>{item.nome}</option>
                   ))}
@@ -1243,11 +1259,17 @@ function App() {
                 <CheckGrid
                   items={[
                     ['hipertenso', 'Hipertenso'],
-                    ['diabetico', 'Diabético'],
+                    ['diabetico', 'Diab?tico'],
                     ['gestante', 'Gestante'],
+                    ['preNatalEmDia', 'Pr?-natal em dia'],
+                    ['bolsaFamilia', 'Bolsa Fam?lia'],
+                    ['responsavelFamiliar', 'Respons?vel familiar'],
+                    ['remedioControlado', 'Rem?dio controlado'],
                     ['vacinaEmDia', 'Vacina em dia'],
                   ]}
                 />
+                <input name="medicamento" placeholder="Medicamento" />
+                <textarea name="observacoes" placeholder="Observa??es" />
                 <button className="primary-button">Salvar</button>
               </form>
             </CrudCard>
