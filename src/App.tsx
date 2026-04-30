@@ -446,7 +446,7 @@ function App() {
   const garantirPerfil = useCallback(async (user: SupabaseUser) => {
     if (!supabase || !user.email) return
     const nome = user.email.split('@')[0]
-    const { error } = await supabase.from('usuarios').upsert({
+    const perfil = {
       id: user.id,
       nome,
       email: user.email,
@@ -454,8 +454,27 @@ function App() {
       unidade_saude: 'Posto da Feira',
       microarea: 'Microárea principal',
       ativo: true,
-    })
-    if (error) throw error
+    }
+
+    const { error: insertError } = await supabase.from('usuarios').insert(perfil)
+    if (!insertError) return
+
+    if (insertError.code === '23505') {
+      const { error: updateError } = await supabase
+        .from('usuarios')
+        .update({
+          nome: perfil.nome,
+          email: perfil.email,
+          cargo: perfil.cargo,
+          unidade_saude: perfil.unidade_saude,
+          microarea: perfil.microarea,
+          ativo: perfil.ativo,
+        })
+        .eq('id', user.id)
+      if (!updateError) return
+    }
+
+    console.warn('Não foi possível sincronizar perfil do usuário:', insertError.message)
   }, [])
 
   const carregarDados = useCallback(async (userIdAtual: string) => {
