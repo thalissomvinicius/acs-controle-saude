@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import {
   Activity,
   AlertTriangle,
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { supabase, supabaseConfigurado } from './lib/supabase'
 import './App.css'
 
 type StatusVisita = 'em_dia' | 'pendente' | 'atrasada'
@@ -38,8 +39,10 @@ type Tela =
   | 'relatorios'
   | 'configuracoes'
 
+type EntityId = string | number
+
 type Logradouro = {
-  id: number
+  id: EntityId
   bairro: string
   nome: string
   tipo: string
@@ -48,8 +51,8 @@ type Logradouro = {
 }
 
 type Familia = {
-  id: number
-  logradouroId: number
+  id: EntityId
+  logradouroId: EntityId
   numero: string
   tipoImovel: string
   nome: string
@@ -63,8 +66,8 @@ type Familia = {
 }
 
 type Morador = {
-  id: number
-  familiaId: number
+  id: EntityId
+  familiaId: EntityId
   nome: string
   cpf: string
   cns: string
@@ -87,8 +90,8 @@ type Morador = {
 }
 
 type Visita = {
-  id: number
-  familiaId: number
+  id: EntityId
+  familiaId: EntityId
   data: string
   acs: string
   pessoasEncontradas: string
@@ -338,6 +341,82 @@ function usePersistentState<T>(key: string, initialValue: T) {
   return [value, setValue] as const
 }
 
+type SupabaseUser = {
+  id: string
+  email?: string
+}
+
+function mapLogradouro(row: Record<string, unknown>): Logradouro {
+  return {
+    id: String(row.id),
+    bairro: String(row.bairro ?? ''),
+    nome: String(row.nome ?? ''),
+    tipo: String(row.tipo ?? 'Rua'),
+    quantidadeImoveis: Number(row.quantidade_imoveis ?? 0),
+    observacoes: String(row.observacoes ?? ''),
+  }
+}
+
+function mapFamilia(row: Record<string, unknown>): Familia {
+  return {
+    id: String(row.id),
+    logradouroId: String(row.logradouro_id),
+    numero: String(row.numero_casa ?? ''),
+    tipoImovel: String(row.tipo_imovel ?? 'Casa'),
+    nome: String(row.nome_familia ?? ''),
+    responsavel: String(row.responsavel_familiar ?? ''),
+    telefone: String(row.telefone ?? ''),
+    quantidadeMoradores: Number(row.quantidade_moradores ?? 0),
+    situacaoMoradia: String(row.situacao_moradia ?? ''),
+    observacoes: String(row.observacoes ?? ''),
+    ultimaVisita: String(row.data_ultima_visita ?? ''),
+    status: String(row.status_visita ?? 'pendente') as StatusVisita,
+  }
+}
+
+function mapMorador(row: Record<string, unknown>): Morador {
+  return {
+    id: String(row.id),
+    familiaId: String(row.familia_id),
+    nome: String(row.nome_completo ?? ''),
+    cpf: String(row.cpf ?? ''),
+    cns: String(row.cns ?? ''),
+    nis: String(row.nis ?? ''),
+    nascimento: String(row.data_nascimento ?? ''),
+    sexo: String(row.sexo ?? ''),
+    telefone: String(row.telefone ?? ''),
+    peso: String(row.peso ?? ''),
+    altura: String(row.altura ?? ''),
+    responsavelFamiliar: Boolean(row.responsavel_familiar),
+    bolsaFamilia: Boolean(row.participa_bolsa_familia),
+    gestante: Boolean(row.gestante),
+    preNatalEmDia: Boolean(row.pre_natal_em_dia),
+    hipertenso: Boolean(row.hipertenso),
+    diabetico: Boolean(row.diabetico),
+    remedioControlado: Boolean(row.usa_remedio_controlado),
+    medicamento: '',
+    vacinaEmDia: Boolean(row.vacina_em_dia),
+    observacoes: String(row.observacoes_gerais ?? ''),
+  }
+}
+
+function mapVisita(row: Record<string, unknown>): Visita {
+  return {
+    id: String(row.id),
+    familiaId: String(row.familia_id),
+    data: String(row.data_visita ?? ''),
+    acs: String(row.acs_responsavel ?? ''),
+    pessoasEncontradas: String(row.pessoas_encontradas ?? ''),
+    condicoes: String(row.condicoes_acompanhadas ?? ''),
+    vacinaAtualizada: Boolean(row.vacina_atualizada),
+    preNatalAtualizado: Boolean(row.pre_natal_atualizado),
+    medicamentoConfirmado: Boolean(row.medicamento_controlado_confirmado),
+    observacoes: String(row.observacoes_visita ?? ''),
+    proximaVisita: String(row.proxima_visita_recomendada ?? ''),
+    status: String(row.status_visita ?? 'pendente') as StatusRegistro,
+  }
+}
+
 function statusTexto(status: StatusVisita | StatusRegistro) {
   const mapa = {
     em_dia: 'Em dia',
@@ -351,6 +430,9 @@ function statusTexto(status: StatusVisita | StatusRegistro) {
 
 function App() {
   const [logado, setLogado] = useState(false)
+  const [carregando, setCarregando] = useState(supabaseConfigurado)
+  const [usuarioId, setUsuarioId] = useState('')
+  const [erroLogin, setErroLogin] = useState('')
   const [tela, setTela] = useState<Tela>('dashboard')
   const [menuAberto, setMenuAberto] = useState(false)
   const [busca, setBusca] = useState('')
@@ -361,10 +443,86 @@ function App() {
   const [visitas, setVisitas] = usePersistentState('acs:visitas', visitasIniciais)
   const [grupoAtivo, setGrupoAtivo] = useState('Vacinas pendentes')
 
+  const garantirPerfil = useCallback(async (user: SupabaseUser) => {
+    if (!supabase || !user.email) return
+    const nome = user.email.split('@')[0]
+    const { error } = await supabase.from('usuarios').upsert({
+      id: user.id,
+      nome,
+      email: user.email,
+      cargo: 'ACS',
+      unidade_saude: 'Posto da Feira',
+      microarea: 'Microárea principal',
+      ativo: true,
+    })
+    if (error) throw error
+  }, [])
+
+  const carregarDados = useCallback(async (userIdAtual: string) => {
+    if (!supabase) return
+    const [logradourosDb, familiasDb, moradoresDb, visitasDb, medicamentosDb] = await Promise.all([
+      supabase.from('logradouros').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
+      supabase.from('familias').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
+      supabase.from('moradores').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
+      supabase.from('visitas').select('*').eq('usuario_id', userIdAtual).order('data_visita', { ascending: false }),
+      supabase.from('medicamentos').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
+    ])
+
+    const erro = logradourosDb.error || familiasDb.error || moradoresDb.error || visitasDb.error || medicamentosDb.error
+    if (erro) throw erro
+
+    const medicamentosPorMorador = new Map<string, string[]>()
+    ;(medicamentosDb.data ?? []).forEach((medicamento) => {
+      const moradorId = String(medicamento.morador_id)
+      medicamentosPorMorador.set(moradorId, [...(medicamentosPorMorador.get(moradorId) ?? []), String(medicamento.nome_medicamento)])
+    })
+
+    setLogradouros((logradourosDb.data ?? []).map(mapLogradouro))
+    setFamilias((familiasDb.data ?? []).map(mapFamilia))
+    setMoradores((moradoresDb.data ?? []).map((morador) => {
+      const mapeado = mapMorador(morador)
+      mapeado.medicamento = (medicamentosPorMorador.get(String(mapeado.id)) ?? []).join(', ')
+      return mapeado
+    }))
+    setVisitas((visitasDb.data ?? []).map(mapVisita))
+  }, [setFamilias, setLogradouros, setMoradores, setVisitas])
+
+  useEffect(() => {
+    if (!supabase) {
+      return
+    }
+
+    supabase.auth.getSession().then(async ({ data }) => {
+      try {
+        const user = data.session?.user
+        if (user) {
+          await garantirPerfil(user)
+          setUsuarioId(user.id)
+          setLogado(true)
+          await carregarDados(user.id)
+        }
+      } catch (error) {
+        setErroLogin(error instanceof Error ? error.message : 'Erro ao carregar dados do Supabase.')
+      } finally {
+        setCarregando(false)
+      }
+    })
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user
+      if (!user) {
+        setUsuarioId('')
+        setLogado(false)
+      }
+    })
+
+    return () => listener.subscription.unsubscribe()
+  }, [carregarDados, garantirPerfil])
+
   const familiasComEndereco = useMemo(
     () =>
       familias.map((familia) => {
-        const logradouro = logradouros.find((item) => item.id === familia.logradouroId)
+        const logradouro = logradouros.find((item) => String(item.id) === String(familia.logradouroId))
         return {
           ...familia,
           endereco: `${logradouro?.tipo ?? 'Rua'} ${logradouro?.nome ?? ''}, ${familia.numero}`,
@@ -377,7 +535,7 @@ function App() {
   const moradoresDetalhados = useMemo(
     () =>
       moradores.map((morador) => {
-        const familia = familiasComEndereco.find((item) => item.id === morador.familiaId)
+        const familia = familiasComEndereco.find((item) => String(item.id) === String(morador.familiaId))
         const idade = calcularIdade(morador.nascimento)
         return {
           ...morador,
@@ -453,116 +611,281 @@ function App() {
     return moradoresDetalhados.filter(filtros[grupoAtivo])
   }, [grupoAtivo, moradoresDetalhados])
 
-  function entrar(event: FormEvent<HTMLFormElement>) {
+  async function entrar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setErroLogin('')
+    const dados = new FormData(event.currentTarget)
+    const email = String(dados.get('usuario')).trim()
+    const senha = String(dados.get('senha'))
+
+    if (supabase) {
+      setCarregando(true)
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
+        if (error) throw error
+        if (!data.user) throw new Error('Login não retornou usuário.')
+        await garantirPerfil(data.user)
+        setUsuarioId(data.user.id)
+        setLogado(true)
+        await carregarDados(data.user.id)
+      } catch (error) {
+        setErroLogin(error instanceof Error ? error.message : 'Não foi possível entrar.')
+      } finally {
+        setCarregando(false)
+      }
+      return
+    }
+
     setLogado(true)
   }
 
-  function adicionarLogradouro(event: FormEvent<HTMLFormElement>) {
+  async function adicionarLogradouro(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const dados = new FormData(event.currentTarget)
+    const novo = {
+      bairro: String(dados.get('bairro')),
+      nome: String(dados.get('nome')),
+      tipo: String(dados.get('tipo')),
+      quantidadeImoveis: Number(dados.get('quantidadeImoveis')),
+      observacoes: String(dados.get('observacoes')),
+    }
+
+    if (supabase && usuarioId) {
+      const { data, error } = await supabase
+        .from('logradouros')
+        .insert({
+          usuario_id: usuarioId,
+          bairro: novo.bairro,
+          nome: novo.nome,
+          tipo: novo.tipo,
+          quantidade_imoveis: novo.quantidadeImoveis,
+          observacoes: novo.observacoes,
+        })
+        .select()
+        .single()
+      if (error) {
+        alert(error.message)
+        return
+      }
+      setLogradouros((atuais) => [...atuais, mapLogradouro(data)])
+      event.currentTarget.reset()
+      return
+    }
+
     setLogradouros((atuais) => [
       ...atuais,
       {
         id: Date.now(),
-        bairro: String(dados.get('bairro')),
-        nome: String(dados.get('nome')),
-        tipo: String(dados.get('tipo')),
-        quantidadeImoveis: Number(dados.get('quantidadeImoveis')),
-        observacoes: String(dados.get('observacoes')),
+        ...novo,
       },
     ])
     event.currentTarget.reset()
   }
 
-  function adicionarFamilia(event: FormEvent<HTMLFormElement>) {
+  async function adicionarFamilia(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const dados = new FormData(event.currentTarget)
+    const nova = {
+      logradouroId: String(dados.get('logradouroId')),
+      numero: String(dados.get('numero')),
+      tipoImovel: String(dados.get('tipoImovel')),
+      nome: String(dados.get('nome')),
+      responsavel: String(dados.get('responsavel')),
+      telefone: String(dados.get('telefone')),
+      quantidadeMoradores: Number(dados.get('quantidadeMoradores')),
+      situacaoMoradia: String(dados.get('situacaoMoradia')),
+      observacoes: String(dados.get('observacoes')),
+      ultimaVisita: String(dados.get('ultimaVisita') || isoHoje),
+      status: String(dados.get('status')) as StatusVisita,
+    }
+
+    if (supabase && usuarioId) {
+      const { data, error } = await supabase
+        .from('familias')
+        .insert({
+          usuario_id: usuarioId,
+          logradouro_id: nova.logradouroId,
+          numero_casa: nova.numero,
+          tipo_imovel: nova.tipoImovel,
+          nome_familia: nova.nome,
+          responsavel_familiar: nova.responsavel,
+          telefone: nova.telefone,
+          quantidade_moradores: nova.quantidadeMoradores,
+          situacao_moradia: nova.situacaoMoradia,
+          observacoes: nova.observacoes,
+          data_ultima_visita: nova.ultimaVisita || null,
+          status_visita: nova.status,
+        })
+        .select()
+        .single()
+      if (error) {
+        alert(error.message)
+        return
+      }
+      setFamilias((atuais) => [...atuais, mapFamilia(data)])
+      event.currentTarget.reset()
+      return
+    }
+
     setFamilias((atuais) => [
       ...atuais,
       {
         id: Date.now(),
-        logradouroId: Number(dados.get('logradouroId')),
-        numero: String(dados.get('numero')),
-        tipoImovel: String(dados.get('tipoImovel')),
-        nome: String(dados.get('nome')),
-        responsavel: String(dados.get('responsavel')),
-        telefone: String(dados.get('telefone')),
-        quantidadeMoradores: Number(dados.get('quantidadeMoradores')),
-        situacaoMoradia: String(dados.get('situacaoMoradia')),
-        observacoes: String(dados.get('observacoes')),
-        ultimaVisita: String(dados.get('ultimaVisita') || isoHoje),
-        status: String(dados.get('status')) as StatusVisita,
+        ...nova,
       },
     ])
     event.currentTarget.reset()
   }
 
-  function adicionarMorador(event: FormEvent<HTMLFormElement>) {
+  async function adicionarMorador(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const dados = new FormData(event.currentTarget)
     const cpf = String(dados.get('cpf'))
     if (moradores.some((item) => item.cpf === cpf)) {
-      alert('Já existe um morador cadastrado com este CPF.')
+      alert('J? existe um morador cadastrado com este CPF.')
       return
     }
+    const novo = {
+      familiaId: String(dados.get('familiaId')),
+      nome: String(dados.get('nome')),
+      cpf,
+      cns: String(dados.get('cns')),
+      nis: String(dados.get('nis')),
+      nascimento: String(dados.get('nascimento')),
+      sexo: String(dados.get('sexo')),
+      telefone: String(dados.get('telefone')),
+      peso: String(dados.get('peso')),
+      altura: String(dados.get('altura')),
+      responsavelFamiliar: dados.get('responsavelFamiliar') === 'on',
+      bolsaFamilia: dados.get('bolsaFamilia') === 'on',
+      gestante: dados.get('gestante') === 'on',
+      preNatalEmDia: dados.get('preNatalEmDia') === 'on',
+      hipertenso: dados.get('hipertenso') === 'on',
+      diabetico: dados.get('diabetico') === 'on',
+      remedioControlado: dados.get('remedioControlado') === 'on',
+      medicamento: String(dados.get('medicamento')),
+      vacinaEmDia: dados.get('vacinaEmDia') === 'on',
+      observacoes: String(dados.get('observacoes')),
+    }
+
+    if (supabase && usuarioId) {
+      const { data, error } = await supabase
+        .from('moradores')
+        .insert({
+          usuario_id: usuarioId,
+          familia_id: novo.familiaId,
+          nome_completo: novo.nome,
+          cpf: novo.cpf,
+          cns: novo.cns,
+          nis: novo.nis,
+          data_nascimento: novo.nascimento,
+          sexo: novo.sexo,
+          telefone: novo.telefone,
+          peso: novo.peso ? Number(novo.peso) : null,
+          altura: novo.altura ? Number(novo.altura) : null,
+          responsavel_familiar: novo.responsavelFamiliar,
+          participa_bolsa_familia: novo.bolsaFamilia,
+          gestante: novo.gestante,
+          pre_natal_em_dia: novo.preNatalEmDia,
+          hipertenso: novo.hipertenso,
+          diabetico: novo.diabetico,
+          usa_remedio_controlado: novo.remedioControlado,
+          vacina_em_dia: novo.vacinaEmDia,
+          observacoes_gerais: novo.observacoes,
+        })
+        .select()
+        .single()
+      if (error) {
+        alert(error.message)
+        return
+      }
+      const moradorSalvo = mapMorador(data)
+      if (novo.remedioControlado && novo.medicamento) {
+        await supabase.from('medicamentos').insert({
+          usuario_id: usuarioId,
+          morador_id: moradorSalvo.id,
+          nome_medicamento: novo.medicamento,
+          uso_continuo: true,
+        })
+        moradorSalvo.medicamento = novo.medicamento
+      }
+      setMoradores((atuais) => [...atuais, moradorSalvo])
+      event.currentTarget.reset()
+      return
+    }
+
     setMoradores((atuais) => [
       ...atuais,
       {
         id: Date.now(),
-        familiaId: Number(dados.get('familiaId')),
-        nome: String(dados.get('nome')),
-        cpf,
-        cns: String(dados.get('cns')),
-        nis: String(dados.get('nis')),
-        nascimento: String(dados.get('nascimento')),
-        sexo: String(dados.get('sexo')),
-        telefone: String(dados.get('telefone')),
-        peso: String(dados.get('peso')),
-        altura: String(dados.get('altura')),
-        responsavelFamiliar: dados.get('responsavelFamiliar') === 'on',
-        bolsaFamilia: dados.get('bolsaFamilia') === 'on',
-        gestante: dados.get('gestante') === 'on',
-        preNatalEmDia: dados.get('preNatalEmDia') === 'on',
-        hipertenso: dados.get('hipertenso') === 'on',
-        diabetico: dados.get('diabetico') === 'on',
-        remedioControlado: dados.get('remedioControlado') === 'on',
-        medicamento: String(dados.get('medicamento')),
-        vacinaEmDia: dados.get('vacinaEmDia') === 'on',
-        observacoes: String(dados.get('observacoes')),
+        ...novo,
       },
     ])
     event.currentTarget.reset()
   }
 
-  function registrarVisita(event: FormEvent<HTMLFormElement>) {
+  async function registrarVisita(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const dados = new FormData(event.currentTarget)
-    const familiaId = Number(dados.get('familiaId'))
+    const familiaId = String(dados.get('familiaId'))
     const data = String(dados.get('data'))
+    const nova = {
+      familiaId,
+      data,
+      acs: String(dados.get('acs')),
+      pessoasEncontradas: String(dados.get('pessoasEncontradas')),
+      condicoes: String(dados.get('condicoes')),
+      vacinaAtualizada: dados.get('vacinaAtualizada') === 'on',
+      preNatalAtualizado: dados.get('preNatalAtualizado') === 'on',
+      medicamentoConfirmado: dados.get('medicamentoConfirmado') === 'on',
+      observacoes: String(dados.get('observacoes')),
+      proximaVisita: String(dados.get('proximaVisita')),
+      status: String(dados.get('status')) as StatusRegistro,
+    }
+
+    if (supabase && usuarioId) {
+      const { error } = await supabase.from('visitas').insert({
+        usuario_id: usuarioId,
+        familia_id: nova.familiaId,
+        data_visita: nova.data,
+        acs_responsavel: nova.acs,
+        pessoas_encontradas: nova.pessoasEncontradas,
+        condicoes_acompanhadas: nova.condicoes,
+        vacina_atualizada: nova.vacinaAtualizada,
+        pre_natal_atualizado: nova.preNatalAtualizado,
+        medicamento_controlado_confirmado: nova.medicamentoConfirmado,
+        observacoes_visita: nova.observacoes,
+        proxima_visita_recomendada: nova.proximaVisita || null,
+        status_visita: nova.status,
+      })
+      if (error) {
+        alert(error.message)
+        return
+      }
+      await carregarDados(usuarioId)
+      event.currentTarget.reset()
+      return
+    }
+
     setVisitas((atuais) => [
       ...atuais,
       {
         id: Date.now(),
-        familiaId,
-        data,
-        acs: String(dados.get('acs')),
-        pessoasEncontradas: String(dados.get('pessoasEncontradas')),
-        condicoes: String(dados.get('condicoes')),
-        vacinaAtualizada: dados.get('vacinaAtualizada') === 'on',
-        preNatalAtualizado: dados.get('preNatalAtualizado') === 'on',
-        medicamentoConfirmado: dados.get('medicamentoConfirmado') === 'on',
-        observacoes: String(dados.get('observacoes')),
-        proximaVisita: String(dados.get('proximaVisita')),
-        status: String(dados.get('status')) as StatusRegistro,
+        ...nova,
       },
     ])
     setFamilias((atuais) =>
       atuais.map((familia) =>
-        familia.id === familiaId ? { ...familia, ultimaVisita: data, status: dados.get('status') === 'concluida' ? 'em_dia' : 'pendente' } : familia,
+        String(familia.id) === familiaId ? { ...familia, ultimaVisita: data, status: dados.get('status') === 'concluida' ? 'em_dia' : 'pendente' } : familia,
       ),
     )
     event.currentTarget.reset()
+  }
+
+  async function sair() {
+    if (supabase) await supabase.auth.signOut()
+    setUsuarioId('')
+    setLogado(false)
   }
 
   function exportarPDF() {
@@ -619,6 +942,21 @@ function App() {
     URL.revokeObjectURL(url)
   }
 
+  if (carregando && !logado) {
+    return (
+      <main className="login-page">
+        <section className="login-card">
+          <div className="brand-mark">
+            <HeartPulse size={34} />
+          </div>
+          <p className="eyebrow">Conectando ao Supabase</p>
+          <h1>ACS Controle Saúde</h1>
+          <p className="login-copy">Carregando sessão e dados do sistema...</p>
+        </section>
+      </main>
+    )
+  }
+
   if (!logado) {
     return (
       <main className="login-page">
@@ -631,18 +969,23 @@ function App() {
           <p className="login-copy">Acompanhe famílias, visitas, pendências e indicadores de saúde em campo.</p>
           <form onSubmit={entrar} className="form-grid">
             <label>
-              Usuário
-              <input name="usuario" autoComplete="username" placeholder="Digite seu usuário" required />
+              Usuário ou e-mail
+              <input name="usuario" autoComplete="username" placeholder="drica@admin.com" type={supabaseConfigurado ? 'email' : 'text'} required />
             </label>
             <label>
               Senha
               <input name="senha" type="password" autoComplete="current-password" placeholder="Digite sua senha" required />
             </label>
-            <button className="primary-button" type="submit">
-              Entrar
+            {erroLogin && <p className="form-error">{erroLogin}</p>}
+            <button className="primary-button" type="submit" disabled={carregando}>
+              {carregando ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
-          <small>Demo local: informe qualquer usuário e senha. No Supabase usaremos autenticação real.</small>
+          <small>
+            {supabaseConfigurado
+              ? 'Login conectado ao Supabase Auth.'
+              : 'Demo local: informe qualquer usuário e senha. No Supabase usaremos autenticação real.'}
+          </small>
         </section>
       </main>
     )
@@ -682,7 +1025,7 @@ function App() {
               </button>
             )
           })}
-          <button onClick={() => setLogado(false)}>
+          <button onClick={sair}>
             <LogOut size={20} />
             Sair
           </button>

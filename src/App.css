@@ -85,6 +85,16 @@ button {
   color: var(--muted);
 }
 
+.form-error {
+  margin: 0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--red-100);
+  color: var(--red-600);
+  font-size: 0.88rem;
+  font-weight: 780;
+}
+
 .eyebrow {
   margin: 0;
   color: var(--green-700);
@@ -149,6 +159,11 @@ textarea:focus {
   background: var(--green-700);
   color: var(--white);
   box-shadow: 0 8px 20px rgba(31, 122, 67, 0.2);
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 .secondary-button {
