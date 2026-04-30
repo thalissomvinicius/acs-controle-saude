@@ -762,7 +762,7 @@ function App() {
       situacaoMoradia: String(dados.get('situacaoMoradia')),
       observacoes: String(dados.get('observacoes')),
       ultimaVisita: String(dados.get('ultimaVisita') || isoHoje),
-      status: String(dados.get('status')) as StatusVisita,
+      status: String(dados.get('status') || 'pendente') as StatusVisita,
     }
 
     if (supabase) {
@@ -1205,6 +1205,23 @@ function App() {
                 </select>
                 <input name="numero" placeholder="Número" required />
                 <input name="nome" placeholder="Nome" required />
+                <select name="tipoImovel" defaultValue="Casa" aria-label="Tipo do imóvel">
+                  <option>Casa</option>
+                  <option>Apartamento</option>
+                  <option>Comércio</option>
+                  <option>Outro</option>
+                </select>
+                <input name="responsavel" placeholder="Responsável familiar" required />
+                <input name="telefone" placeholder="Telefone" />
+                <input name="quantidadeMoradores" type="number" min="0" placeholder="Moradores" />
+                <input name="situacaoMoradia" placeholder="Situação da moradia" />
+                <input name="ultimaVisita" type="date" defaultValue={isoHoje} />
+                <select name="status" defaultValue="pendente" aria-label="Status da visita">
+                  <option value="em_dia">Em dia</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="atrasada">Atrasada</option>
+                </select>
+                <textarea name="observacoes" placeholder="Observações" />
                 <button className="primary-button">Salvar</button>
               </form>
             </CrudCard>
