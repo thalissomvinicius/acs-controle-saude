@@ -1201,32 +1201,65 @@ function App() {
 
         {tela === 'familias' && (
           <section className="screen two-column animate-in">
-            <CrudCard title="Nova Família">
+            <CrudCard title="Nova Fam?lia">
               <form className="form-grid" onSubmit={adicionarFamilia}>
-                <select name="logradouroId" required aria-label="Selecionar logradouro">
-                  {logradouros.map((item) => (
-                    <option key={item.id} value={item.id}>{item.nome}</option>
-                  ))}
-                </select>
-                <input name="numero" placeholder="Número" required />
-                <input name="nome" placeholder="Nome" required />
-                <select name="tipoImovel" defaultValue="Casa" aria-label="Tipo do imóvel">
-                  <option>Casa</option>
-                  <option>Apartamento</option>
-                  <option>Comércio</option>
-                  <option>Outro</option>
-                </select>
-                <input name="responsavel" placeholder="Responsável familiar" required />
-                <input name="telefone" placeholder="Telefone" />
-                <input name="quantidadeMoradores" type="number" min="0" placeholder="Moradores" />
-                <input name="situacaoMoradia" placeholder="Situação da moradia" />
-                <input name="ultimaVisita" type="date" defaultValue={isoHoje} />
-                <select name="status" defaultValue="pendente" aria-label="Status da visita">
-                  <option value="em_dia">Em dia</option>
-                  <option value="pendente">Pendente</option>
-                  <option value="atrasada">Atrasada</option>
-                </select>
-                <textarea name="observacoes" placeholder="Observações" />
+                <label>
+                  Logradouro
+                  <select name="logradouroId" required>
+                    {logradouros.map((item) => (
+                      <option key={item.id} value={item.id}>{item.nome}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  N?mero da casa
+                  <input name="numero" placeholder="Ex.: 123" required />
+                </label>
+                <label>
+                  Nome da fam?lia
+                  <input name="nome" placeholder="Ex.: Fam?lia Souza" required />
+                </label>
+                <label>
+                  Tipo do im?vel
+                  <select name="tipoImovel" defaultValue="Casa">
+                    <option>Casa</option>
+                    <option>Apartamento</option>
+                    <option>Com?rcio</option>
+                    <option>Outro</option>
+                  </select>
+                </label>
+                <label>
+                  Respons?vel familiar
+                  <input name="responsavel" placeholder="Nome do respons?vel" required />
+                </label>
+                <label>
+                  Telefone
+                  <input name="telefone" placeholder="(00) 00000-0000" />
+                </label>
+                <label>
+                  Quantidade de moradores
+                  <input name="quantidadeMoradores" type="number" min="0" placeholder="Total de pessoas na casa" />
+                </label>
+                <label>
+                  Situa??o da moradia
+                  <input name="situacaoMoradia" placeholder="Pr?pria, alugada, cedida..." />
+                </label>
+                <label>
+                  Data da ?ltima visita
+                  <input name="ultimaVisita" type="date" defaultValue={isoHoje} />
+                </label>
+                <label>
+                  Status da visita
+                  <select name="status" defaultValue="pendente">
+                    <option value="em_dia">Em dia</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="atrasada">Atrasada</option>
+                  </select>
+                </label>
+                <label>
+                  Observa??es do domic?lio
+                  <textarea name="observacoes" placeholder="Informa??es importantes sobre a fam?lia ou moradia" />
+                </label>
                 <button className="primary-button">Salvar</button>
               </form>
             </CrudCard>
@@ -1317,18 +1350,53 @@ function App() {
           <section className="screen two-column animate-in">
             <CrudCard title="Registrar Visita">
               <form className="form-grid" onSubmit={registrarVisita}>
-                <select name="familiaId" required aria-label="Selecionar família">
-                  {familias.map((item) => (
-                    <option key={item.id} value={item.id}>{item.nome}</option>
-                  ))}
-                </select>
-                <input name="data" type="date" defaultValue={isoHoje} required aria-label="Data da visita" />
+                <label>
+                  Fam?lia visitada
+                  <select name="familiaId" required>
+                    {familias.map((item) => (
+                      <option key={item.id} value={item.id}>{item.nome}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Data da visita domiciliar
+                  <input name="data" type="date" defaultValue={isoHoje} required />
+                </label>
+                <label>
+                  ACS respons?vel
+                  <input name="acs" placeholder="Nome da ACS" defaultValue="Adriellen Guimaraes" />
+                </label>
+                <label>
+                  Pessoas encontradas
+                  <input name="pessoasEncontradas" placeholder="Quem estava na resid?ncia" />
+                </label>
+                <label>
+                  Condi??es acompanhadas
+                  <input name="condicoes" placeholder="Hipertens?o, gestante, crian?a, idoso..." />
+                </label>
+                <label>
+                  Pr?xima visita recomendada
+                  <input name="proximaVisita" type="date" />
+                </label>
                 <CheckGrid
                   items={[
                     ['vacinaAtualizada', 'Vacina atualizada'],
+                    ['preNatalAtualizado', 'Pr?-natal atualizado'],
                     ['medicamentoConfirmado', 'Medicamento confirmado'],
                   ]}
                 />
+                <label>
+                  Observa??es da visita
+                  <textarea name="observacoes" placeholder="Orienta??es, pend?ncias e encaminhamentos" />
+                </label>
+                <label>
+                  Status da visita
+                  <select name="status" defaultValue="concluida">
+                    <option value="concluida">Conclu?da</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="retorno_necessario">Retorno necess?rio</option>
+                  </select>
+                </label>
                 <button className="primary-button">Registrar</button>
               </form>
             </CrudCard>
