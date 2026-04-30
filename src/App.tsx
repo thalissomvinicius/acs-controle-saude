@@ -1251,7 +1251,7 @@ function App() {
                 <input name="telefone" placeholder="Telefone" />
                 <input name="peso" placeholder="Peso" />
                 <input name="altura" placeholder="Altura" />
-                <select name="familiaId" required aria-label="Selecionar fam?lia">
+                <select name="familiaId" required aria-label="Selecionar família">
                   {familias.map((item) => (
                     <option key={item.id} value={item.id}>{item.nome}</option>
                   ))}
@@ -1259,17 +1259,17 @@ function App() {
                 <CheckGrid
                   items={[
                     ['hipertenso', 'Hipertenso'],
-                    ['diabetico', 'Diab?tico'],
+                    ['diabetico', 'Diabético'],
                     ['gestante', 'Gestante'],
-                    ['preNatalEmDia', 'Pr?-natal em dia'],
-                    ['bolsaFamilia', 'Bolsa Fam?lia'],
-                    ['responsavelFamiliar', 'Respons?vel familiar'],
-                    ['remedioControlado', 'Rem?dio controlado'],
+                    ['preNatalEmDia', 'Pré-natal em dia'],
+                    ['bolsaFamilia', 'Bolsa Família'],
+                    ['responsavelFamiliar', 'Responsável familiar'],
+                    ['remedioControlado', 'Remédio controlado'],
                     ['vacinaEmDia', 'Vacina em dia'],
                   ]}
                 />
                 <input name="medicamento" placeholder="Medicamento" />
-                <textarea name="observacoes" placeholder="Observa??es" />
+                <textarea name="observacoes" placeholder="Observações" />
                 <button className="primary-button">Salvar</button>
               </form>
             </CrudCard>
