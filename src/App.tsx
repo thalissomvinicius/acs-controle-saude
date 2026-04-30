@@ -13,7 +13,6 @@ import {
   MapPinned,
   Menu,
   Pill,
-  Plus,
   Search,
   Settings,
   ShieldCheck,
@@ -1248,9 +1247,6 @@ function App() {
             )
           })}
         </nav>
-        <button className="fab mobile-only" onClick={() => navegarPara('visitas')} aria-label="Nova visita">
-          <Plus size={24} />
-        </button>
       </main>
     </div>
   )
