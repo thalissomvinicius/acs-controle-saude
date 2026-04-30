@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 128" role="img" aria-label="ACS Controle Saúde">
+  <rect x="8" y="8" width="112" height="112" rx="30" fill="#135a34"/>
+  <path fill="#ffffff" d="m34 61 30-24 30 24v30a9 9 0 0 1-9 9H43a9 9 0 0 1-9-9z"/>
+  <path fill="#edf8f1" d="M51 100V76a6 6 0 0 1 6-6h14a6 6 0 0 1 6 6v24z"/>
+  <path fill="none" stroke="#1f7a43" stroke-linecap="round" stroke-linejoin="round" stroke-width="7" d="M45 64h12l5-11 10 23 5-12h12"/>
+  <text x="146" y="58" fill="#18231d" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800">ACS Controle Saúde</text>
+  <text x="148" y="88" fill="#68756d" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="600">Famílias, visitas e indicadores da ACS</text>
+</svg>

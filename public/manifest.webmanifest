@@ -1,0 +1,17 @@
+{
+  "name": "ACS Controle Saúde",
+  "short_name": "ACS Saúde",
+  "description": "Sistema para acompanhamento de famílias, visitas e indicadores da ACS.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f8f6",
+  "theme_color": "#135a34",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

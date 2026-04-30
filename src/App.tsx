@@ -972,7 +972,7 @@ function App() {
       <main className="login-page">
         <section className="login-card">
           <div className="brand-mark">
-            <HeartPulse size={34} />
+            <img src="/favicon.svg" alt="" />
           </div>
           <p className="eyebrow">Conectando ao Supabase</p>
           <h1>ACS Controle Saúde</h1>
@@ -987,7 +987,7 @@ function App() {
       <main className="login-page">
         <section className="login-card">
           <div className="brand-mark">
-            <HeartPulse size={34} />
+            <img src="/favicon.svg" alt="" />
           </div>
           <p className="eyebrow">Sistema da Agente Comunitária de Saúde</p>
           <h1>ACS Controle Saúde</h1>
@@ -1022,7 +1022,7 @@ function App() {
         <div className="sidebar-head">
           <div className="brand-row">
             <span className="brand-icon">
-              <HeartPulse size={24} />
+              <img src="/favicon.svg" alt="" />
             </span>
             <div>
               <strong>ACS Controle Saúde</strong>
