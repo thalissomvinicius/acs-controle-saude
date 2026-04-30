@@ -1238,24 +1238,54 @@ function App() {
           <section className="screen two-column animate-in">
             <CrudCard title="Novo Morador">
               <form className="form-grid" onSubmit={adicionarMorador}>
-                <input name="nome" placeholder="Nome" required />
-                <input name="cpf" placeholder="CPF" required />
-                <input name="cns" placeholder="CNS" />
-                <input name="nis" placeholder="NIS" />
-                <input name="nascimento" type="date" required />
-                <select name="sexo" defaultValue="Feminino" aria-label="Sexo">
-                  <option>Feminino</option>
-                  <option>Masculino</option>
-                  <option>Outro</option>
-                </select>
-                <input name="telefone" placeholder="Telefone" />
-                <input name="peso" placeholder="Peso" />
-                <input name="altura" placeholder="Altura" />
-                <select name="familiaId" required aria-label="Selecionar família">
-                  {familias.map((item) => (
-                    <option key={item.id} value={item.id}>{item.nome}</option>
-                  ))}
-                </select>
+                <label>
+                  Nome completo
+                  <input name="nome" placeholder="Ex.: Maria Souza" required />
+                </label>
+                <label>
+                  CPF
+                  <input name="cpf" placeholder="000.000.000-00" required />
+                </label>
+                <label>
+                  CNS
+                  <input name="cns" placeholder="Cartão Nacional de Saúde" />
+                </label>
+                <label>
+                  NIS
+                  <input name="nis" placeholder="Número de Identificação Social" />
+                </label>
+                <label>
+                  Data de nascimento
+                  <input name="nascimento" type="date" required />
+                </label>
+                <label>
+                  Sexo
+                  <select name="sexo" defaultValue="Feminino">
+                    <option>Feminino</option>
+                    <option>Masculino</option>
+                    <option>Outro</option>
+                  </select>
+                </label>
+                <label>
+                  Telefone
+                  <input name="telefone" placeholder="(00) 00000-0000" />
+                </label>
+                <label>
+                  Peso
+                  <input name="peso" placeholder="Kg" />
+                </label>
+                <label>
+                  Altura
+                  <input name="altura" placeholder="Metros. Ex.: 1,65" />
+                </label>
+                <label>
+                  Família/domicílio vinculado
+                  <select name="familiaId" required>
+                    {familias.map((item) => (
+                      <option key={item.id} value={item.id}>{item.nome}</option>
+                    ))}
+                  </select>
+                </label>
                 <CheckGrid
                   items={[
                     ['hipertenso', 'Hipertenso'],
@@ -1268,8 +1298,14 @@ function App() {
                     ['vacinaEmDia', 'Vacina em dia'],
                   ]}
                 />
-                <input name="medicamento" placeholder="Medicamento" />
-                <textarea name="observacoes" placeholder="Observações" />
+                <label>
+                  Medicamento controlado
+                  <input name="medicamento" placeholder="Nome do medicamento, se houver" />
+                </label>
+                <label>
+                  Observações gerais
+                  <textarea name="observacoes" placeholder="Informações importantes para acompanhamento" />
+                </label>
                 <button className="primary-button">Salvar</button>
               </form>
             </CrudCard>

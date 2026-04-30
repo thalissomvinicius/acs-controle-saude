@@ -529,7 +529,7 @@ textarea:focus {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.panel > .form-grid textarea,
+.panel > .form-grid label:has(textarea),
 .panel > .form-grid .check-grid,
 .panel > .form-grid .primary-button,
 .panel > .form-grid .form-actions {
