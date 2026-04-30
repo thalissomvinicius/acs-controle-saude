@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --green-900: #0d3f25;
   --green-800: #135a34;
   --green-700: #1f7a43;
@@ -22,6 +22,7 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -41,6 +42,21 @@ textarea {
 
 button {
   cursor: pointer;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: slideUp 0.22s ease-out both;
 }
 
 .login-page {
@@ -63,7 +79,8 @@ button {
 }
 
 .brand-mark,
-.brand-icon {
+.brand-icon,
+.brand-mark-small {
   width: 50px;
   height: 50px;
   display: grid;
@@ -74,11 +91,19 @@ button {
 }
 
 .brand-mark img,
-.brand-icon img {
+.brand-icon img,
+.brand-mark-small img {
   width: 100%;
   height: 100%;
   display: block;
   border-radius: inherit;
+}
+
+.brand-mark-small {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  margin: 0;
 }
 
 .login-card h1 {
@@ -631,6 +656,12 @@ textarea:focus {
 
 .indicator-tabs {
   margin-bottom: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.indicator-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .indicator-list {

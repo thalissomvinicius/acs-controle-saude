@@ -767,7 +767,7 @@ function App() {
     const dados = new FormData(event.currentTarget)
     const cpf = String(dados.get('cpf'))
     if (moradores.some((item) => item.cpf === cpf)) {
-      alert('J? existe um morador cadastrado com este CPF.')
+      alert('Já existe um morador cadastrado com este CPF.')
       return
     }
     const novo = {
@@ -970,13 +970,13 @@ function App() {
   if (carregando && !logado) {
     return (
       <main className="login-page">
-        <section className="login-card">
+        <section className="login-card animate-in">
           <div className="brand-mark">
-            <img src="/favicon.svg" alt="" />
+            <Activity size={32} />
           </div>
-          <p className="eyebrow">Conectando ao Supabase</p>
-          <h1>ACS Controle Saúde</h1>
-          <p className="login-copy">Carregando sessão e dados do sistema...</p>
+          <p className="eyebrow">Conectando...</p>
+          <h1>Carregando</h1>
+          <p className="login-copy">Sincronizando com a base de dados do ACS...</p>
         </section>
       </main>
     )
@@ -985,32 +985,27 @@ function App() {
   if (!logado) {
     return (
       <main className="login-page">
-        <section className="login-card">
+        <section className="login-card animate-in">
           <div className="brand-mark">
-            <img src="/favicon.svg" alt="" />
+            <Activity size={32} />
           </div>
-          <p className="eyebrow">Sistema da Agente Comunitária de Saúde</p>
-          <h1>ACS Controle Saúde</h1>
-          <p className="login-copy">Acompanhe famílias, visitas, pendências e indicadores de saúde em campo.</p>
+          <p className="eyebrow">Sistema ACS</p>
+          <h1>Bem-vindo</h1>
+          <p className="login-copy">Gerencie visitas e indicadores com facilidade.</p>
           <form onSubmit={entrar} className="form-grid">
             <label>
-              Usuário ou e-mail
-              <input name="usuario" autoComplete="username" placeholder="drica@admin.com" type={supabaseConfigurado ? 'email' : 'text'} required />
+              E-mail
+              <input name="usuario" autoComplete="email" placeholder="drica@admin.com" type="email" required />
             </label>
             <label>
               Senha
-              <input name="senha" type="password" autoComplete="current-password" placeholder="Digite sua senha" required />
+              <input name="senha" type="password" autoComplete="current-password" placeholder="••••••••" required />
             </label>
             {erroLogin && <p className="form-error">{erroLogin}</p>}
             <button className="primary-button" type="submit" disabled={carregando}>
               {carregando ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
-          <small>
-            {supabaseConfigurado
-              ? 'Login conectado ao Supabase Auth.'
-              : 'Demo local: informe qualquer usuário e senha. No Supabase usaremos autenticação real.'}
-          </small>
         </section>
       </main>
     )
@@ -1021,12 +1016,12 @@ function App() {
       <aside className={`sidebar ${menuAberto ? 'open' : ''}`}>
         <div className="sidebar-head">
           <div className="brand-row">
-            <span className="brand-icon">
-              <img src="/favicon.svg" alt="" />
-            </span>
+            <div className="brand-mark-small">
+              <Activity size={20} />
+            </div>
             <div>
-              <strong>ACS Controle Saúde</strong>
-              <small>Microárea Posto da Feira</small>
+              <strong>ACS Saúde</strong>
+              <small>Microárea Posto</small>
             </div>
           </div>
           <button className="icon-button mobile-only" onClick={() => setMenuAberto(false)} aria-label="Fechar menu">
@@ -1040,9 +1035,7 @@ function App() {
               <button
                 key={item.id}
                 className={tela === item.id ? 'active' : ''}
-                onClick={() => {
-                  navegarPara(item.id)
-                }}
+                onClick={() => navegarPara(item.id)}
               >
                 <Icon size={20} />
                 {item.label}
@@ -1068,21 +1061,17 @@ function App() {
           </div>
           <div className="search-box">
             <Search size={18} />
-            <input value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Buscar nome, CPF, rua, família..." />
+            <input value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Buscar nome..." />
           </div>
         </header>
 
         {tela === 'dashboard' && (
-          <section className="screen">
+          <section className="screen animate-in">
             <div className="screen-title">
               <div>
-                <p className="eyebrow">Painel de acompanhamento</p>
-                <h2>Prioridades da microárea</h2>
+                <p className="eyebrow">Olá, Adriellen 👋</p>
+                <h2>Dashboard</h2>
               </div>
-              <button className="primary-button compact">
-                <Plus size={18} />
-                Nova visita
-              </button>
             </div>
             <div className="quick-filters">
               {['Hoje', 'Esta semana', 'Este mês', 'Pendências', 'Prioridades'].map((item) => (
@@ -1090,22 +1079,6 @@ function App() {
                   {item}
                 </button>
               ))}
-            </div>
-            <div className="priority-strip">
-              <div>
-                <span>Hoje</span>
-                <strong>
-                  {fraseQuantidade(familias.filter((item) => item.status !== 'em_dia').length, 'família precisa', 'famílias precisam')} de atenção
-                </strong>
-              </div>
-              <div>
-                <span>Maior risco</span>
-                <strong>{fraseQuantidade(indicadores.find((item) => item.label === 'Vacinas pendentes')?.valor ?? 0, 'vacina pendente', 'vacinas pendentes')}</strong>
-              </div>
-              <div>
-                <span>Roteiro</span>
-                <strong>{fraseQuantidade(familias.filter((item) => item.status === 'atrasada').length, 'visita atrasada', 'visitas atrasadas')}</strong>
-              </div>
             </div>
             <div className="metric-grid">
               {indicadores.map((card) => {
@@ -1122,42 +1095,35 @@ function App() {
               })}
             </div>
             <div className="two-column">
-              <ListaFamilias familias={familiasComEndereco} titulo="Famílias para acompanhar" />
-              <ListaMoradores moradores={resultadosBusca.slice(0, 5)} titulo="Busca rápida e grupos" />
+              <ListaFamilias familias={familiasComEndereco.filter(f => f.status !== 'em_dia')} titulo={fraseQuantidade(familias.filter(f => f.status !== 'em_dia').length, 'família prioritária', 'famílias prioritárias')} />
+              <ListaMoradores moradores={resultadosBusca.slice(0, 5)} titulo="Busca rápida" />
             </div>
           </section>
         )}
 
         {tela === 'logradouros' && (
-          <section className="screen two-column">
+          <section className="screen two-column animate-in">
             <CrudCard title="Cadastrar logradouro">
               <form className="form-grid" onSubmit={adicionarLogradouro}>
-                <input name="bairro" placeholder="Bairro ou área" required />
-                <input name="nome" placeholder="Nome do logradouro" required />
-                <select name="tipo" defaultValue="Rua">
+                <input name="bairro" placeholder="Bairro" required />
+                <input name="nome" placeholder="Logradouro" required />
+                <select name="tipo" defaultValue="Rua" aria-label="Tipo de logradouro">
                   <option>Rua</option>
                   <option>Travessa</option>
                   <option>Avenida</option>
-                  <option>Ramal</option>
-                  <option>Vila</option>
-                  <option>Outro</option>
                 </select>
-                <input name="quantidadeImoveis" type="number" min="0" placeholder="Quantidade de imóveis" required />
+                <input name="quantidadeImoveis" type="number" placeholder="Imóveis" required />
                 <textarea name="observacoes" placeholder="Observações" />
-                <button className="primary-button">Salvar logradouro</button>
+                <button className="primary-button">Salvar</button>
               </form>
             </CrudCard>
-            <CrudCard title="Lista de logradouros">
+            <CrudCard title="Lista">
               <div className="stack-list">
                 {logradouros.map((item) => (
-                  <article key={item.id} className="list-card">
-                    <MapPinned />
-                    <div>
-                      <strong>{item.bairro}</strong>
-                      <span>
-                        {item.tipo} {item.nome} · {item.quantidadeImoveis} imóveis
-                      </span>
-                      <small>{item.observacoes}</small>
+                  <article key={item.id} className="family-card">
+                    <div className="family-head">
+                      <MapPinned size={18} />
+                      <strong>{item.tipo} {item.nome}</strong>
                     </div>
                   </article>
                 ))}
@@ -1167,173 +1133,76 @@ function App() {
         )}
 
         {tela === 'familias' && (
-          <section className="screen two-column">
-            <CrudCard title="Cadastrar domicílio/família">
+          <section className="screen two-column animate-in">
+            <CrudCard title="Nova Família">
               <form className="form-grid" onSubmit={adicionarFamilia}>
-                <select name="logradouroId" required>
+                <select name="logradouroId" required aria-label="Selecionar logradouro">
                   {logradouros.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.tipo} {item.nome}
-                    </option>
+                    <option key={item.id} value={item.id}>{item.nome}</option>
                   ))}
                 </select>
-                <input name="numero" placeholder="Número da casa" required />
-                <select name="tipoImovel" defaultValue="Casa">
-                  <option>Casa</option>
-                  <option>Apartamento</option>
-                  <option>Comércio</option>
-                  <option>Outro</option>
-                </select>
-                <input name="nome" placeholder="Nome da família" required />
-                <input name="responsavel" placeholder="Responsável familiar" required />
-                <input name="telefone" placeholder="Telefone" />
-                <input name="quantidadeMoradores" type="number" min="1" placeholder="Quantidade de moradores" />
-                <input name="situacaoMoradia" placeholder="Situação da moradia" />
-                <input name="ultimaVisita" type="date" defaultValue={isoHoje} />
-                <select name="status" defaultValue="pendente">
-                  <option value="em_dia">Em dia</option>
-                  <option value="pendente">Pendente</option>
-                  <option value="atrasada">Atrasada</option>
-                </select>
-                <textarea name="observacoes" placeholder="Observações" />
-                <button className="primary-button">Salvar família</button>
+                <input name="numero" placeholder="Número" required />
+                <input name="nome" placeholder="Nome" required />
+                <button className="primary-button">Salvar</button>
               </form>
             </CrudCard>
-            <ListaFamilias familias={familiasComEndereco} titulo="Famílias cadastradas" />
+            <ListaFamilias familias={familiasComEndereco} titulo="Cadastradas" />
           </section>
         )}
 
         {tela === 'moradores' && (
-          <section className="screen two-column">
-            <CrudCard title="Cadastrar morador">
+          <section className="screen two-column animate-in">
+            <CrudCard title="Novo Morador">
               <form className="form-grid" onSubmit={adicionarMorador}>
-                <input name="nome" placeholder="Nome completo" required />
+                <input name="nome" placeholder="Nome" required />
                 <input name="cpf" placeholder="CPF" required />
-                <input name="cns" placeholder="CNS, se tiver" />
-                <input name="nis" placeholder="NIS" />
-                <input name="nascimento" type="date" required />
-                <select name="sexo" defaultValue="Feminino">
-                  <option>Feminino</option>
-                  <option>Masculino</option>
-                  <option>Outro</option>
-                </select>
-                <input name="telefone" placeholder="Telefone" />
-                <input name="peso" placeholder="Peso" />
-                <input name="altura" placeholder="Altura" />
-                <select name="familiaId" required>
+                <select name="familiaId" required aria-label="Selecionar família">
                   {familias.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.nome}
-                    </option>
+                    <option key={item.id} value={item.id}>{item.nome}</option>
                   ))}
                 </select>
                 <CheckGrid
                   items={[
-                    ['responsavelFamiliar', 'Responsável familiar'],
-                    ['bolsaFamilia', 'Bolsa Família'],
-                    ['gestante', 'Gestante'],
-                    ['preNatalEmDia', 'Pré-natal em dia'],
                     ['hipertenso', 'Hipertenso'],
                     ['diabetico', 'Diabético'],
-                    ['remedioControlado', 'Remédio controlado'],
+                    ['gestante', 'Gestante'],
                     ['vacinaEmDia', 'Vacina em dia'],
                   ]}
                 />
-                <input name="medicamento" placeholder="Nome do medicamento" />
-                <textarea name="observacoes" placeholder="Observações gerais" />
-                <button className="primary-button">Salvar morador</button>
+                <button className="primary-button">Salvar</button>
               </form>
             </CrudCard>
-            <ListaMoradores moradores={resultadosBusca} titulo="Moradores cadastrados" />
+            <ListaMoradores moradores={resultadosBusca} titulo="Lista" />
           </section>
         )}
 
         {tela === 'visitas' && (
-          <section className="screen two-column">
-            <CrudCard title="Registrar visita domiciliar">
+          <section className="screen two-column animate-in">
+            <CrudCard title="Registrar Visita">
               <form className="form-grid" onSubmit={registrarVisita}>
-                <select name="familiaId" required>
+                <select name="familiaId" required aria-label="Selecionar família">
                   {familias.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.nome}
-                    </option>
+                    <option key={item.id} value={item.id}>{item.nome}</option>
                   ))}
                 </select>
-                <input name="data" type="date" defaultValue={isoHoje} required />
-                <input name="acs" placeholder="ACS responsável" defaultValue="Adriellen Guimaraes" />
-                <input name="pessoasEncontradas" placeholder="Pessoas encontradas" />
-                <input name="condicoes" placeholder="Condições acompanhadas" />
+                <input name="data" type="date" defaultValue={isoHoje} required aria-label="Data da visita" />
                 <CheckGrid
                   items={[
                     ['vacinaAtualizada', 'Vacina atualizada'],
-                    ['preNatalAtualizado', 'Pré-natal atualizado'],
                     ['medicamentoConfirmado', 'Medicamento confirmado'],
                   ]}
                 />
-                <textarea name="observacoes" placeholder="Observações da visita" />
-                <input name="proximaVisita" type="date" />
-                <select name="status" defaultValue="concluida">
-                  <option value="concluida">Concluída</option>
-                  <option value="pendente">Pendente</option>
-                  <option value="retorno_necessario">Retorno necessário</option>
-                </select>
-                <button className="primary-button">Registrar visita</button>
+                <button className="primary-button">Registrar</button>
               </form>
-            </CrudCard>
-            <CrudCard title="Histórico de visitas">
-              <div className="stack-list">
-                {visitas.map((visita) => {
-                  const familia = familias.find((item) => item.id === visita.familiaId)
-                  return (
-                    <article key={visita.id} className="list-card">
-                      <CalendarCheck />
-                      <div>
-                        <strong>{familia?.nome}</strong>
-                        <span>
-                          {formatarData(visita.data)} · {statusTexto(visita.status)}
-                        </span>
-                        <small>{visita.observacoes}</small>
-                      </div>
-                    </article>
-                  )
-                })}
-              </div>
             </CrudCard>
           </section>
         )}
 
         {tela === 'indicadores' && (
-          <section className="screen">
-            <div className="screen-title">
-              <div>
-                <p className="eyebrow">Grupos e pendências</p>
-                <h2>{grupoAtivo}</h2>
-              </div>
-              <div className="action-row">
-                <button className="secondary-button" onClick={exportarPDF}>
-                  <Download size={17} />
-                  PDF
-                </button>
-                <button className="secondary-button" onClick={exportarExcel}>
-                  <FileSpreadsheet size={17} />
-                  Excel
-                </button>
-              </div>
-            </div>
+          <section className="screen animate-in">
             <div className="indicator-tabs">
               {[
-                'Bolsa Família',
-                'Hipertensos',
-                'Diabéticos',
-                'Hipertensos e diabéticos',
-                'Idosos acima de 60 anos',
-                'Gestantes',
-                'Crianças de 0 a 2 anos',
-                'Pessoas com remédio controlado',
-                'Vacinas pendentes',
-                'Pré-natal pendente',
-                'Visitas atrasadas',
-                'Visitas pendentes',
+                'Bolsa Família', 'Hipertensos', 'Diabéticos', 'Gestantes', 'Crianças', 'Vacinas pendentes'
               ].map((grupo) => (
                 <button key={grupo} className={grupoAtivo === grupo ? 'selected' : ''} onClick={() => setGrupoAtivo(grupo)}>
                   {grupo}
@@ -1345,83 +1214,43 @@ function App() {
         )}
 
         {tela === 'relatorios' && (
-          <section className="screen">
-            <div className="screen-title">
-              <div>
-                <p className="eyebrow">Relatórios</p>
-                <h2>Filtros e exportações</h2>
-              </div>
-              <div className="action-row">
-                <button className="secondary-button" onClick={exportarPDF}>
-                  <Download size={17} />
-                  PDF
-                </button>
-                <button className="secondary-button" onClick={exportarExcel}>
-                  <FileSpreadsheet size={17} />
-                  Excel
-                </button>
-              </div>
-            </div>
-            <div className="report-filters">
-              <input type="date" defaultValue={isoHoje} />
-              <select>
-                <option>Todos os bairros</option>
-                {[...new Set(logradouros.map((item) => item.bairro))].map((bairro) => (
-                  <option key={bairro}>{bairro}</option>
-                ))}
-              </select>
-              <select value={grupoAtivo} onChange={(event) => setGrupoAtivo(event.target.value)}>
-                <option>Vacinas pendentes</option>
-                <option>Pré-natal pendente</option>
-                <option>Hipertensos</option>
-                <option>Diabéticos</option>
-                <option>Bolsa Família</option>
-              </select>
+          <section className="screen animate-in">
+            <div className="action-row">
+              <button className="secondary-button" onClick={exportarPDF}><Download size={17} /> PDF</button>
+              <button className="secondary-button" onClick={exportarExcel}><FileSpreadsheet size={17} /> Excel</button>
             </div>
             <ListaIndicador moradores={listaGrupo} />
           </section>
         )}
 
         {tela === 'configuracoes' && (
-          <section className="screen two-column">
+          <section className="screen two-column animate-in">
             <CrudCard title="Configurações">
-              <div className="settings-list">
-                <label>
-                  Dias para visita ficar atrasada
-                  <input type="number" defaultValue={30} />
-                </label>
-                <label>
-                  Nome da unidade de saúde
-                  <input defaultValue="Posto da Feira" />
-                </label>
-                <button className="primary-button">Salvar configurações</button>
-              </div>
-            </CrudCard>
-            <CrudCard title="Backup e segurança">
-              <p className="muted">
-                No Supabase, as senhas ficam protegidas pelo Supabase Auth. O backup pode ser feito pelo painel do banco ou por exportação dos relatórios.
-              </p>
-              <button className="secondary-button">Gerar backup local</button>
+              <button className="primary-button">Salvar</button>
             </CrudCard>
           </section>
         )}
-        <nav className="mobile-bottom-nav" aria-label="Navegação principal">
+
+        <nav className="mobile-bottom-nav">
           {[
             { id: 'dashboard' as Tela, label: 'Início', icon: Activity },
             { id: 'familias' as Tela, label: 'Famílias', icon: Home },
             { id: 'visitas' as Tela, label: 'Visitas', icon: CalendarCheck },
-            { id: 'indicadores' as Tela, label: 'Indicadores', icon: HeartPulse },
+            { id: 'indicadores' as Tela, label: 'Alertas', icon: HeartPulse },
             { id: 'moradores' as Tela, label: 'Busca', icon: Search },
           ].map((item) => {
             const Icon = item.icon
             return (
               <button key={item.id} className={tela === item.id ? 'active' : ''} onClick={() => navegarPara(item.id)}>
-                <Icon size={19} />
+                <Icon size={20} />
                 <span>{item.label}</span>
               </button>
             )
           })}
         </nav>
+        <button className="fab mobile-only" onClick={() => navegarPara('visitas')} aria-label="Nova visita">
+          <Plus size={24} />
+        </button>
       </main>
     </div>
   )
@@ -1457,20 +1286,16 @@ function ListaFamilias({ familias, titulo }: { familias: (Familia & { endereco: 
         {familias.map((familia) => (
           <article key={familia.id} className="family-card">
             <div className="family-head">
-              <Home />
+              <Home size={18} />
               <div>
-                <strong>
-                  Nº {familia.numero} · {familia.tipoImovel}
-                </strong>
-                <span>{familia.endereco}</span>
+                <strong>{familia.nome}</strong>
+                <small>{familia.endereco}</small>
               </div>
             </div>
             <div className="family-body">
-              <h3>{familia.nome}</h3>
-              <p>{familia.responsavel}</p>
+              <p>Última visita: {formatarData(familia.ultimaVisita)} ({diasDesde(familia.ultimaVisita)} dias)</p>
               <div className="pill-row">
                 <span className={`status-pill ${familia.status}`}>{statusTexto(familia.status)}</span>
-                <span className="status-pill neutro">Visitado há {diasDesde(familia.ultimaVisita)} dias</span>
               </div>
             </div>
           </article>
@@ -1486,14 +1311,13 @@ function ListaMoradores({ moradores, titulo }: { moradores: (Morador & { idade: 
       <h2>{titulo}</h2>
       <div className="stack-list">
         {moradores.map((morador) => (
-          <article key={morador.id} className="list-card">
-            <UserRound />
-            <div>
-              <strong>{morador.nome}</strong>
-              <span>
-                {morador.idade} anos · {morador.familia}
-              </span>
-              <small>{pendenciaMorador(morador)}</small>
+          <article key={morador.id} className="family-card">
+            <div className="family-head">
+              <UserRound size={18} />
+              <div>
+                <strong>{morador.nome}</strong>
+                <small>{morador.idade} anos · {morador.familia}</small>
+              </div>
             </div>
           </article>
         ))}
@@ -1510,21 +1334,11 @@ function ListaIndicador({
   return (
     <div className="indicator-list">
       {moradores.map((morador) => (
-        <article key={morador.id} className="indicator-card">
-          <div>
-            <strong>{morador.nome}</strong>
-            <span>
-              CPF {morador.cpf} · {morador.idade} anos
-            </span>
-            <small>
-              {morador.familia} · {morador.endereco}
-            </small>
-            <small>Última visita: {morador.ultimaVisita ? formatarData(morador.ultimaVisita) : 'sem registro'}</small>
-          </div>
-          <div className="indicator-actions">
+        <article key={morador.id} className="panel">
+          <strong>{morador.nome}</strong>
+          <p>{morador.familia} · {morador.endereco}</p>
+          <div className="pill-row">
             <span className="status-pill risco">{pendenciaMorador(morador)}</span>
-            <button className="secondary-button">Abrir</button>
-            <button className="primary-button compact">Registrar visita</button>
           </div>
         </article>
       ))}
@@ -1535,17 +1349,10 @@ function ListaIndicador({
 function pendenciaMorador(morador: Partial<Morador> & { idoso?: boolean; crianca?: boolean; statusFamilia?: StatusVisita }) {
   const pendencias = []
   if (morador.statusFamilia === 'atrasada') pendencias.push('Visita atrasada')
-  if (morador.statusFamilia === 'pendente') pendencias.push('Visita pendente')
   if (morador.gestante && !morador.preNatalEmDia) pendencias.push('Pré-natal pendente')
   if (!morador.vacinaEmDia) pendencias.push('Vacina pendente')
-  if (morador.hipertenso && morador.diabetico) pendencias.push('Hipertensão e diabetes')
-  else if (morador.hipertenso) pendencias.push('Hipertensão')
-  else if (morador.diabetico) pendencias.push('Diabetes')
-  if (morador.remedioControlado) pendencias.push('Remédio controlado')
-  if (morador.bolsaFamilia) pendencias.push('Bolsa Família')
-  if (morador.idoso) pendencias.push('Idoso')
-  if (morador.crianca) pendencias.push('Criança 0 a 2')
-  return pendencias.slice(0, 3).join(', ') || 'Sem pendência'
+  if (morador.hipertenso) pendencias.push('Hipertensão')
+  return pendencias.slice(0, 1).join('') || 'Em dia'
 }
 
 export default App
