@@ -377,6 +377,28 @@ const menus = [
   { id: 'configuracoes' as Tela, label: 'Configurações', icon: Settings },
 ]
 
+const caminhoPorTela: Record<Tela, string> = {
+  dashboard: '/',
+  logradouros: '/logradouros',
+  familias: '/familias',
+  moradores: '/moradores',
+  visitas: '/visitas',
+  vacinas: '/vacinas',
+  indicadores: '/indicadores',
+  relatorios: '/relatorios',
+  configuracoes: '/configuracoes',
+}
+
+const telaPorCaminho = Object.entries(caminhoPorTela).reduce<Record<string, Tela>>((acc, [telaAtual, caminho]) => {
+  acc[caminho] = telaAtual as Tela
+  return acc
+}, {})
+
+function telaDaUrl() {
+  const caminho = window.location.pathname.replace(/\/$/, '') || '/'
+  return telaPorCaminho[caminho] ?? 'dashboard'
+}
+
 const gruposIndicadores = [
   'Bolsa Família',
   'Hipertensos',
@@ -667,7 +689,7 @@ function App() {
   const [erroLogin, setErroLogin] = useState('')
   const [mensagemLogin, setMensagemLogin] = useState('')
   const [modoAuth, setModoAuth] = useState<ModoAuth>('entrar')
-  const [tela, setTela] = useState<Tela>('dashboard')
+  const [tela, setTela] = useState<Tela>(() => telaDaUrl())
   const [menuAberto, setMenuAberto] = useState(false)
   const [busca, setBusca] = useState('')
   const [filtroRapido, setFiltroRapido] = useState('Mês')
@@ -701,10 +723,25 @@ function App() {
   }
 
   function navegarPara(proximaTela: Tela) {
+    const proximoCaminho = caminhoPorTela[proximaTela]
+    if (window.location.pathname !== proximoCaminho) {
+      window.history.pushState({ tela: proximaTela }, '', proximoCaminho)
+    }
     setTela(proximaTela)
     setMenuAberto(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+
+  useEffect(() => {
+    const aoVoltar = () => {
+      setTela(telaDaUrl())
+      setMenuAberto(false)
+      window.scrollTo({ top: 0, behavior: 'auto' })
+    }
+
+    window.addEventListener('popstate', aoVoltar)
+    return () => window.removeEventListener('popstate', aoVoltar)
+  }, [])
 
   function editarFamilia(familia: Familia) {
     setFamiliaEditando(familia)
