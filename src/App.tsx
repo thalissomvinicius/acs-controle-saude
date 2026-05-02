@@ -1771,15 +1771,60 @@ function ListaVisitas({
 }: {
   visitas: (Visita & { familia: string; endereco: string })[]
 }) {
+  const [buscaHistorico, setBuscaHistorico] = useState('')
+  const [dataInicio, setDataInicio] = useState('')
+  const [dataFim, setDataFim] = useState('')
+  const [statusFiltro, setStatusFiltro] = useState('')
+
+  const visitasFiltradas = visitas.filter((visita) => {
+    const termo = normalizarBusca(buscaHistorico.trim())
+    const dentroDaBusca = !termo || [
+      visita.familia,
+      visita.endereco,
+      visita.acs,
+      visita.pessoasEncontradas,
+      visita.condicoes,
+      visita.observacoes,
+      statusTexto(visita.status),
+    ].some((valor) => correspondeBusca(valor, termo))
+    const depoisDoInicio = !dataInicio || visita.data >= dataInicio
+    const antesDoFim = !dataFim || visita.data <= dataFim
+    const statusOk = !statusFiltro || visita.status === statusFiltro
+    return dentroDaBusca && depoisDoInicio && antesDoFim && statusOk
+  })
+
   return (
     <section className="panel">
       <div className="panel-title-row">
         <h2>Visitas registradas</h2>
-        <span>{visitas.length}</span>
+        <span>{visitasFiltradas.length}</span>
+      </div>
+      <div className="visit-filters">
+        <label>
+          Buscar
+          <input value={buscaHistorico} onChange={(event) => setBuscaHistorico(event.target.value)} placeholder="Familia, ACS, condicao..." />
+        </label>
+        <label>
+          De
+          <input type="date" value={dataInicio} onChange={(event) => setDataInicio(event.target.value)} />
+        </label>
+        <label>
+          Ate
+          <input type="date" value={dataFim} onChange={(event) => setDataFim(event.target.value)} />
+        </label>
+        <label>
+          Status
+          <select value={statusFiltro} onChange={(event) => setStatusFiltro(event.target.value)}>
+            <option value="">Todos</option>
+            <option value="concluida">Concluida</option>
+            <option value="pendente">Pendente</option>
+            <option value="retorno_necessario">Retorno necessario</option>
+          </select>
+        </label>
       </div>
       <div className="stack-list">
-        {visitas.length === 0 && <p className="empty-state">Nenhuma visita registrada ainda.</p>}
-        {visitas.map((visita) => (
+        {visitasFiltradas.length === 0 && <p className="empty-state">Nenhuma visita encontrada.</p>}
+        {visitasFiltradas.map((visita) => (
           <article key={visita.id} className="visit-card">
             <div className="visit-card-head">
               <CalendarCheck size={18} />

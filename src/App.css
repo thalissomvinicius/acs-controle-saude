@@ -807,6 +807,28 @@ textarea:focus {
   box-shadow: 0 6px 16px rgba(24, 35, 29, 0.04);
 }
 
+.visit-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) repeat(3, minmax(110px, 0.8fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.visit-filters label {
+  display: grid;
+  gap: 5px;
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 780;
+}
+
+.visit-filters input,
+.visit-filters select {
+  min-height: 40px;
+  border-radius: 11px;
+  padding: 9px 11px;
+}
+
 .visit-card-head {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1056,6 +1078,10 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .visit-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .indicator-actions {
     justify-content: flex-start;
   }
@@ -1279,6 +1305,11 @@ textarea:focus {
   .check-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 7px;
+  }
+
+  .visit-filters {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .panel {
