@@ -1903,6 +1903,20 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15) !important;
 }
 
+/* Corrige sobreposição de estilo no input de busca na topbar */
+.search-box input {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.search-box input:focus {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 /* Priority Strip */
 .priority-strip {
   background: rgba(255, 255, 255, 0.5) !important;
@@ -1916,12 +1930,27 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Metric Cards Adjustments */
+.metric-card {
+  padding: 16px 14px 16px 18px !important;
+  gap: 8px !important;
+  min-height: 128px !important;
+}
 .metric-card::before {
   width: 5px;
   border-radius: 5px;
-  inset: 12px auto 12px 12px;
+  inset: 16px auto 16px 8px;
 }
 .metric-card.ok::before { background: var(--green-600); }
+.metric-card strong {
+  margin: 4px 0 0 0 !important;
+  font-size: 2.1rem !important;
+  line-height: 1.1 !important;
+}
+.metric-card small {
+  font-size: 0.85rem !important;
+  color: var(--muted) !important;
+  margin-top: 2px !important;
+}
 
 /* Typography Polish */
 h1, h2, h3, strong {
