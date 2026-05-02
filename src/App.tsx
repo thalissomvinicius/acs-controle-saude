@@ -30,6 +30,7 @@ import './App.css'
 
 type StatusVisita = 'em_dia' | 'pendente' | 'atrasada'
 type StatusRegistro = 'concluida' | 'pendente' | 'retorno_necessario'
+type StatusVacina = 'aplicada' | 'pendente' | 'atrasada'
 type Tela =
   | 'dashboard'
   | 'logradouros'
@@ -103,6 +104,17 @@ type Visita = {
   observacoes: string
   proximaVisita: string
   status: StatusRegistro
+}
+
+type VacinaRegistro = {
+  id: EntityId
+  moradorId: EntityId
+  nome: string
+  dose: string
+  dataAplicacao: string
+  dataPrevista: string
+  status: StatusVacina
+  observacoes: string
 }
 
 const hoje = new Date()
@@ -286,6 +298,46 @@ const visitasIniciais: Visita[] = [
   },
 ]
 
+const vacinasIniciais: VacinaRegistro[] = [
+  {
+    id: 1,
+    moradorId: 2,
+    nome: 'Pentavalente',
+    dose: '2a dose',
+    dataAplicacao: '',
+    dataPrevista: '2025-05-15',
+    status: 'atrasada',
+    observacoes: 'Conferir caderneta e orientar UBS.',
+  },
+  {
+    id: 2,
+    moradorId: 4,
+    nome: 'Influenza',
+    dose: 'Anual 2026',
+    dataAplicacao: '',
+    dataPrevista: '2026-04-01',
+    status: 'pendente',
+    observacoes: 'Prioridade por idade e condicoes cronicas.',
+  },
+]
+
+const vacinasCatalogo = [
+  'BCG',
+  'Hepatite B',
+  'Pentavalente',
+  'VIP',
+  'Rotavirus',
+  'Pneumococica',
+  'Meningococica C',
+  'Febre amarela',
+  'Triplice viral',
+  'DTP',
+  'Influenza',
+  'COVID-19',
+  'dT',
+  'dTpa',
+]
+
 const menus = [
   { id: 'dashboard' as Tela, label: 'Inicio', icon: Activity },
   { id: 'logradouros' as Tela, label: 'Logradouros', icon: MapPinned },
@@ -455,13 +507,27 @@ function mapVisita(row: Record<string, unknown>): Visita {
   }
 }
 
-function statusTexto(status: StatusVisita | StatusRegistro) {
+function mapVacina(row: Record<string, unknown>): VacinaRegistro {
+  return {
+    id: String(row.id),
+    moradorId: String(row.morador_id),
+    nome: String(row.nome_vacina ?? ''),
+    dose: String(row.dose ?? ''),
+    dataAplicacao: String(row.data_aplicacao ?? ''),
+    dataPrevista: String(row.data_prevista ?? ''),
+    status: String(row.status_vacina ?? 'pendente') as StatusVacina,
+    observacoes: String(row.observacoes ?? ''),
+  }
+}
+
+function statusTexto(status: StatusVisita | StatusRegistro | StatusVacina) {
   const mapa = {
     em_dia: 'Em dia',
     pendente: 'Pendente',
     atrasada: 'Atrasada',
     concluida: 'Concluida',
     retorno_necessario: 'Retorno necessario',
+    aplicada: 'Aplicada',
   }
   return mapa[status]
 }
@@ -479,11 +545,13 @@ function App() {
   const [familias, setFamilias] = usePersistentState('acs:familias', familiasIniciais)
   const [moradores, setMoradores] = usePersistentState('acs:moradores', moradoresIniciais)
   const [visitas, setVisitas] = usePersistentState('acs:visitas', visitasIniciais)
+  const [vacinas, setVacinas] = usePersistentState('acs:vacinas', vacinasIniciais)
   const [grupoAtivo, setGrupoAtivo] = useState('Vacinas pendentes')
   const [logradouroEditando, setLogradouroEditando] = useState<Logradouro | null>(null)
   const [familiaEditando, setFamiliaEditando] = useState<Familia | null>(null)
   const [moradorEditando, setMoradorEditando] = useState<Morador | null>(null)
   const [visitaEditando, setVisitaEditando] = useState<Visita | null>(null)
+  const [moradorVacinaId, setMoradorVacinaId] = useState<EntityId | ''>('')
 
   function navegarPara(proximaTela: Tela) {
     setTela(proximaTela)
@@ -498,6 +566,7 @@ function App() {
 
   function editarMorador(morador: Morador) {
     setMoradorEditando(morador)
+    setMoradorVacinaId(morador.id)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -594,7 +663,19 @@ function App() {
       return mapeado
     }))
     setVisitas((visitasDb.data ?? []).map(mapVisita))
-  }, [setFamilias, setLogradouros, setMoradores, setVisitas])
+
+    const vacinasDb = await supabase
+      .from('vacinas_moradores')
+      .select('*')
+      .eq('usuario_id', userIdAtual)
+      .order('data_prevista', { ascending: true })
+
+    if (vacinasDb.error) {
+      console.warn('Tabela de vacinas ainda nao disponivel no Supabase:', vacinasDb.error.message)
+    } else {
+      setVacinas((vacinasDb.data ?? []).map(mapVacina))
+    }
+  }, [setFamilias, setLogradouros, setMoradores, setVacinas, setVisitas])
 
   async function obterUsuarioAutenticado() {
     if (!supabase) return ''
@@ -659,19 +740,27 @@ function App() {
       moradores.map((morador) => {
         const familia = familiasComEndereco.find((item) => String(item.id) === String(morador.familiaId))
         const idade = calcularIdade(morador.nascimento)
+        const vacinasDoMorador = vacinas.filter((vacina) => String(vacina.moradorId) === String(morador.id))
+        const vacinasPendentes = pendenciasVacinais(morador, vacinasDoMorador)
         return {
           ...morador,
           idade,
           crianca: idade >= 0 && idade <= 2,
           idoso: idade >= 60,
+          vacinaPendente: !morador.vacinaEmDia || vacinasPendentes.length > 0,
+          totalVacinasPendentes: vacinasPendentes.length,
           familia: familia?.nome ?? '',
           endereco: familia?.endereco ?? '',
           ultimaVisita: familia?.ultimaVisita ?? '',
           statusFamilia: familia?.status ?? 'pendente',
         }
       }),
-    [moradores, familiasComEndereco],
+    [moradores, familiasComEndereco, vacinas],
   )
+
+  const moradorVacinaSelecionadoId = moradores.some((morador) => String(morador.id) === String(moradorVacinaId))
+    ? moradorVacinaId
+    : moradores[0]?.id ?? ''
 
   const visitasDetalhadas = useMemo(
     () =>
@@ -704,7 +793,7 @@ function App() {
       { label: 'Hipertensos e diabeticos', valor: moradores.filter((item) => item.hipertenso && item.diabetico).length, icon: ShieldCheck, status: 'risco' },
       { label: 'Bolsa Familia', valor: moradores.filter((item) => item.bolsaFamilia).length, icon: UsersRound, status: 'neutro' },
       { label: 'Remedio controlado', valor: moradores.filter((item) => item.remedioControlado).length, icon: Pill, status: 'atencao' },
-      { label: 'Vacinas pendentes', valor: moradores.filter((item) => !item.vacinaEmDia).length, icon: Syringe, status: 'risco' },
+      { label: 'Vacinas pendentes', valor: moradoresDetalhados.filter((item) => item.vacinaPendente).length, icon: Syringe, status: 'risco' },
       { label: 'Pre-natal pendente', valor: moradores.filter((item) => item.gestante && !item.preNatalEmDia).length, icon: Baby, status: 'risco' },
     ]
   }, [familias, familiasComEndereco, moradores, moradoresDetalhados, visitas])
@@ -737,7 +826,7 @@ function App() {
       Gestantes: (item) => item.gestante,
       'Criancas de 0 a 2 anos': (item) => item.crianca,
       'Pessoas com remedio controlado': (item) => item.remedioControlado,
-      'Vacinas pendentes': (item) => !item.vacinaEmDia,
+      'Vacinas pendentes': (item) => item.vacinaPendente,
       'Pre-natal pendente': (item) => item.gestante && !item.preNatalEmDia,
       'Visitas atrasadas': (item) => item.statusFamilia === 'atrasada',
       'Visitas pendentes': (item) => item.statusFamilia === 'pendente',
@@ -1049,7 +1138,55 @@ function App() {
     }
 
     setMoradores((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
+    setVacinas((atuais) => atuais.filter((item) => String(item.moradorId) !== String(id)))
     if (moradorEditando && String(moradorEditando.id) === String(id)) setMoradorEditando(null)
+    if (String(moradorVacinaId) === String(id)) setMoradorVacinaId('')
+  }
+
+  async function salvarVacinaMorador(registro: Omit<VacinaRegistro, 'id'>, id?: EntityId) {
+    if (supabase) {
+      const usuarioAtual = await obterUsuarioAutenticado()
+      const payload = {
+        usuario_id: usuarioAtual,
+        morador_id: registro.moradorId,
+        nome_vacina: registro.nome,
+        dose: registro.dose,
+        data_aplicacao: registro.dataAplicacao || null,
+        data_prevista: registro.dataPrevista || null,
+        status_vacina: registro.status,
+        observacoes: registro.observacoes,
+      }
+      const query = id
+        ? supabase.from('vacinas_moradores').update(payload).eq('id', id).select().single()
+        : supabase.from('vacinas_moradores').insert(payload).select().single()
+      const { data, error } = await query
+      if (error) {
+        alert(`Nao foi possivel salvar a vacina. Rode o SQL da tabela vacinas_moradores no Supabase. Detalhe: ${error.message}`)
+        return
+      }
+      const vacinaSalva = mapVacina(data)
+      setVacinas((atuais) => id ? atuais.map((item) => String(item.id) === String(id) ? vacinaSalva : item) : [...atuais, vacinaSalva])
+      return
+    }
+
+    const vacinaSalva = { id: id ?? Date.now(), ...registro }
+    setVacinas((atuais) => id ? atuais.map((item) => String(item.id) === String(id) ? vacinaSalva : item) : [...atuais, vacinaSalva])
+  }
+
+  async function excluirVacinaMorador(id: EntityId) {
+    const confirmar = window.confirm('Excluir este registro de vacina?')
+    if (!confirmar) return
+
+    if (supabase) {
+      await obterUsuarioAutenticado()
+      const { error } = await supabase.from('vacinas_moradores').delete().eq('id', id)
+      if (error) {
+        alert(error.message)
+        return
+      }
+    }
+
+    setVacinas((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
   }
 
   async function registrarVisita(event: FormEvent<HTMLFormElement>) {
@@ -1485,7 +1622,7 @@ function App() {
         )}
 
         {tela === 'moradores' && (
-          <section className="screen two-column animate-in">
+          <section className="screen two-column residents-screen animate-in">
             <CrudCard title={moradorEditando ? 'Editar Morador' : 'Novo Morador'}>
               <form className="form-grid" onSubmit={adicionarMorador} key={moradorEditando?.id ?? 'novo-morador'}>
                 <label>
@@ -1567,7 +1704,23 @@ function App() {
                 </div>
               </form>
             </CrudCard>
-            <ListaMoradores moradores={resultadosBusca} titulo="Lista" onEdit={editarMorador} onDelete={excluirMorador} />
+            <div className="stack-list">
+              <ListaMoradores
+                moradores={resultadosBusca}
+                titulo="Lista"
+                onEdit={editarMorador}
+                onDelete={excluirMorador}
+                onVaccines={(morador) => setMoradorVacinaId(morador.id)}
+              />
+              <CadernetaVacinal
+                moradores={moradoresDetalhados}
+                moradorId={moradorVacinaSelecionadoId}
+                registros={vacinas}
+                onSelectMorador={setMoradorVacinaId}
+                onSave={salvarVacinaMorador}
+                onDelete={excluirVacinaMorador}
+              />
+            </div>
           </section>
         )}
 
@@ -1791,11 +1944,13 @@ function ListaMoradores({
   titulo,
   onEdit,
   onDelete,
+  onVaccines,
 }: {
-  moradores: (Morador & { idade: number; crianca: boolean; idoso: boolean; familia: string; endereco: string })[]
+  moradores: (Morador & { idade: number; crianca: boolean; idoso: boolean; familia: string; endereco: string; vacinaPendente?: boolean; totalVacinasPendentes?: number })[]
   titulo: string
   onEdit?: (morador: Morador) => void
   onDelete?: (id: EntityId) => void
+  onVaccines?: (morador: Morador) => void
 }) {
   return (
     <section className="panel">
@@ -1808,10 +1963,18 @@ function ListaMoradores({
               <UserRound size={18} />
               <div>
                 <strong>{morador.nome}</strong>
-                <small>{morador.idade} anos - {morador.familia}</small>
+                <small>
+                  {morador.idade} anos - {morador.familia}
+                  {morador.vacinaPendente ? ` - ${morador.totalVacinasPendentes || 1} vacina(s) pendente(s)` : ''}
+                </small>
               </div>
-              {(onEdit || onDelete) && (
+              {(onEdit || onDelete || onVaccines) && (
                 <div className="card-actions">
+                  {onVaccines && (
+                    <button className="icon-action" type="button" onClick={() => onVaccines(morador)} aria-label="Abrir caderneta vacinal">
+                      <Syringe size={17} />
+                    </button>
+                  )}
                   {onEdit && (
                     <button className="icon-action" type="button" onClick={() => onEdit(morador)} aria-label="Editar morador">
                       <Edit3 size={17} />
@@ -1828,6 +1991,167 @@ function ListaMoradores({
           </article>
         ))}
       </div>
+    </section>
+  )
+}
+
+function CadernetaVacinal({
+  moradores,
+  moradorId,
+  registros,
+  onSelectMorador,
+  onSave,
+  onDelete,
+}: {
+  moradores: (Morador & { idade: number; familia: string; endereco: string })[]
+  moradorId: EntityId | ''
+  registros: VacinaRegistro[]
+  onSelectMorador: (id: EntityId) => void
+  onSave: (registro: Omit<VacinaRegistro, 'id'>, id?: EntityId) => Promise<void>
+  onDelete: (id: EntityId) => void
+}) {
+  const [registroEditando, setRegistroEditando] = useState<VacinaRegistro | null>(null)
+  const morador = moradores.find((item) => String(item.id) === String(moradorId))
+  const registrosMorador = registros.filter((item) => morador && String(item.moradorId) === String(morador.id))
+  const sugestoes = morador ? calendarioVacinalSugerido(morador, registrosMorador).slice(0, 8) : []
+  const pendentes = morador ? pendenciasVacinais(morador, registrosMorador) : []
+
+  async function salvar(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!morador) return
+    const form = event.currentTarget
+    const dados = new FormData(form)
+    const status = String(dados.get('status')) as StatusVacina
+    await onSave(
+      {
+        moradorId: String(dados.get('moradorId')),
+        nome: String(dados.get('nome')),
+        dose: String(dados.get('dose')),
+        dataAplicacao: String(dados.get('dataAplicacao')),
+        dataPrevista: String(dados.get('dataPrevista')),
+        status,
+        observacoes: String(dados.get('observacoes')),
+      },
+      registroEditando?.id,
+    )
+    setRegistroEditando(null)
+    form.reset()
+  }
+
+  return (
+    <section className="panel vaccine-panel">
+      <div className="panel-title-row">
+        <h2>Caderneta vacinal</h2>
+        <span>{pendentes.length}</span>
+      </div>
+      {moradores.length === 0 && <p className="empty-state">Cadastre um morador para controlar vacinas.</p>}
+      {moradores.length > 0 && (
+        <>
+          <form className="form-grid vaccine-form" onSubmit={salvar} key={registroEditando?.id ?? String(moradorId)}>
+            <label>
+              Morador
+              <select
+                name="moradorId"
+                value={registroEditando?.moradorId ?? moradorId}
+                onChange={(event) => onSelectMorador(event.target.value)}
+                required
+              >
+                {moradores.map((item) => (
+                  <option key={item.id} value={item.id}>{item.nome}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Vacina
+              <select name="nome" defaultValue={registroEditando?.nome ?? 'Influenza'} required>
+                {vacinasCatalogo.map((vacina) => (
+                  <option key={vacina}>{vacina}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Dose
+              <input name="dose" placeholder="Ex.: 1a dose, reforco, anual" defaultValue={registroEditando?.dose ?? ''} required />
+            </label>
+            <label>
+              Data prevista
+              <input name="dataPrevista" type="date" defaultValue={registroEditando?.dataPrevista ?? ''} />
+            </label>
+            <label>
+              Data aplicada
+              <input name="dataAplicacao" type="date" defaultValue={registroEditando?.dataAplicacao ?? ''} />
+            </label>
+            <label>
+              Status
+              <select name="status" defaultValue={registroEditando?.status ?? 'pendente'}>
+                <option value="aplicada">Aplicada</option>
+                <option value="pendente">Pendente</option>
+                <option value="atrasada">Atrasada</option>
+              </select>
+            </label>
+            <label>
+              Observacoes
+              <textarea name="observacoes" placeholder="Lote, UBS, orientacao ou motivo da pendencia" defaultValue={registroEditando?.observacoes ?? ''} />
+            </label>
+            <div className="form-actions">
+              <button className="primary-button">{registroEditando ? 'Atualizar vacina' : 'Salvar vacina'}</button>
+              {registroEditando && (
+                <button className="secondary-button" type="button" onClick={() => setRegistroEditando(null)}>
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </form>
+
+          {morador && (
+            <div className="vaccine-summary">
+              <strong>{morador.nome}</strong>
+              <span>{morador.idade} anos - {morador.familia}</span>
+              <small>{pendentes.length ? `${pendentes.length} pendencia(s) para conferir` : 'Sem pendencia detalhada registrada'}</small>
+            </div>
+          )}
+
+          <div className="vaccine-list">
+            <h3>Calendario sugerido</h3>
+            {sugestoes.length === 0 && <p className="empty-state">Sem sugestoes para este perfil.</p>}
+            {sugestoes.map((item) => (
+              <article key={`${item.nome}-${item.dose}`} className="vaccine-row">
+                <div>
+                  <strong>{item.nome}</strong>
+                  <small>{item.dose} {item.dataPrevista ? `- prevista ${formatarData(item.dataPrevista)}` : ''}</small>
+                </div>
+                <span className={`status-pill ${item.status}`}>{statusTexto(item.status)}</span>
+              </article>
+            ))}
+          </div>
+
+          <div className="vaccine-list">
+            <h3>Registros salvos</h3>
+            {registrosMorador.length === 0 && <p className="empty-state">Nenhuma vacina registrada para este morador.</p>}
+            {registrosMorador.map((registro) => (
+              <article key={registro.id} className="vaccine-row saved">
+                <div>
+                  <strong>{registro.nome}</strong>
+                  <small>
+                    {registro.dose}
+                    {registro.dataAplicacao ? ` - aplicada ${formatarData(registro.dataAplicacao)}` : ''}
+                    {!registro.dataAplicacao && registro.dataPrevista ? ` - prevista ${formatarData(registro.dataPrevista)}` : ''}
+                  </small>
+                </div>
+                <span className={`status-pill ${registro.status}`}>{statusTexto(registro.status)}</span>
+                <div className="card-actions">
+                  <button className="icon-action" type="button" onClick={() => setRegistroEditando(registro)} aria-label="Editar vacina">
+                    <Edit3 size={16} />
+                  </button>
+                  <button className="icon-action danger" type="button" onClick={() => onDelete(registro.id)} aria-label="Excluir vacina">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
     </section>
   )
 }
@@ -1972,11 +2296,99 @@ function textoPrazoVisita(data: string) {
   return `Visita atrasada ha ${Math.abs(saldo)} dias. Passar novamente.`
 }
 
-function pendenciaMorador(morador: Partial<Morador> & { idoso?: boolean; crianca?: boolean; statusFamilia?: StatusVisita }) {
+function adicionarMeses(data: string, meses: number) {
+  if (!data) return ''
+  const base = new Date(`${data}T00:00:00`)
+  base.setMonth(base.getMonth() + meses)
+  return base.toISOString().slice(0, 10)
+}
+
+function mesesDesdeNascimento(data: string) {
+  if (!data) return 0
+  const nascimento = new Date(`${data}T00:00:00`)
+  return (hoje.getFullYear() - nascimento.getFullYear()) * 12 + hoje.getMonth() - nascimento.getMonth()
+}
+
+function statusVacinaPrevista(dataPrevista: string, registro?: VacinaRegistro): StatusVacina {
+  if (registro?.status) return registro.status
+  if (!dataPrevista) return 'pendente'
+  return dataPrevista < isoHoje ? 'atrasada' : 'pendente'
+}
+
+function calendarioVacinalSugerido(morador: Morador, registros: VacinaRegistro[]) {
+  const idadeMeses = mesesDesdeNascimento(morador.nascimento)
+  const encontrarRegistro = (nome: string, dose: string) =>
+    registros.find((registro) => normalizarBusca(registro.nome) === normalizarBusca(nome) && normalizarBusca(registro.dose) === normalizarBusca(dose))
+
+  const sugestoesBase =
+    idadeMeses <= 72
+      ? [
+          ['BCG', 'Ao nascer', 0],
+          ['Hepatite B', 'Ao nascer', 0],
+          ['Pentavalente', '1a dose', 2],
+          ['VIP', '1a dose', 2],
+          ['Rotavirus', '1a dose', 2],
+          ['Pneumococica', '1a dose', 2],
+          ['Meningococica C', '1a dose', 3],
+          ['Pentavalente', '2a dose', 4],
+          ['VIP', '2a dose', 4],
+          ['Rotavirus', '2a dose', 4],
+          ['Pentavalente', '3a dose', 6],
+          ['VIP', '3a dose', 6],
+          ['Febre amarela', 'Dose inicial', 9],
+          ['Triplice viral', '1a dose', 12],
+          ['Pneumococica', 'Reforco', 12],
+          ['Meningococica C', 'Reforco', 12],
+          ['DTP', '1o reforco', 15],
+          ['Triplice viral', '2a dose', 15],
+          ['DTP', '2o reforco', 48],
+        ]
+      : [
+          ['Influenza', `Anual ${hoje.getFullYear()}`, 0],
+          ['COVID-19', 'Conferir reforco', 0],
+          ['dT', 'Conferir reforco 10 anos', 0],
+        ]
+
+  const sugestoesGestante = morador.gestante
+    ? [
+        ['dTpa', 'Gestante', 0],
+        ['Influenza', `Gestante ${hoje.getFullYear()}`, 0],
+        ['Hepatite B', 'Conferir esquema', 0],
+      ]
+    : []
+
+  return [...sugestoesBase, ...sugestoesGestante]
+    .filter(([, , mes]) => idadeMeses >= Number(mes) || Number(mes) === 0)
+    .map(([nome, dose, mes]) => {
+      const dataPrevista = Number(mes) > 0 ? adicionarMeses(morador.nascimento, Number(mes)) : ''
+      const registro = encontrarRegistro(String(nome), String(dose))
+      return {
+        nome: String(nome),
+        dose: String(dose),
+        dataPrevista,
+        status: statusVacinaPrevista(dataPrevista, registro),
+      }
+    })
+}
+
+function pendenciasVacinais(morador: Morador, registros: VacinaRegistro[]) {
+  if (!registros.length && morador.vacinaEmDia) return []
+  const sugestoesPendentes = calendarioVacinalSugerido(morador, registros).filter((item) => item.status !== 'aplicada')
+  const registrosPendentes = registros.filter((registro) => registro.status !== 'aplicada')
+  const chaves = new Set<string>()
+  return [...registrosPendentes, ...sugestoesPendentes].filter((item) => {
+    const chave = `${normalizarBusca(item.nome)}-${normalizarBusca(item.dose)}`
+    if (chaves.has(chave)) return false
+    chaves.add(chave)
+    return true
+  })
+}
+
+function pendenciaMorador(morador: Partial<Morador> & { idoso?: boolean; crianca?: boolean; statusFamilia?: StatusVisita; vacinaPendente?: boolean }) {
   const pendencias = []
   if (morador.statusFamilia === 'atrasada') pendencias.push('Visita atrasada')
   if (morador.gestante && !morador.preNatalEmDia) pendencias.push('Pre-natal pendente')
-  if (!morador.vacinaEmDia) pendencias.push('Vacina pendente')
+  if (morador.vacinaPendente || !morador.vacinaEmDia) pendencias.push('Vacina pendente')
   if (morador.hipertenso) pendencias.push('Hipertensao')
   return pendencias.slice(0, 1).join('') || 'Em dia'
 }
