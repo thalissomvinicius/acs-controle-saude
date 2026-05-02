@@ -325,6 +325,24 @@ function fraseQuantidade(total: number, singular: string, plural: string) {
   return `${total} ${total === 1 ? singular : plural}`
 }
 
+function normalizarBusca(valor: string) {
+  return valor
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+function correspondeBusca(valor: string, termo: string) {
+  const texto = normalizarBusca(valor)
+  if (termo.length <= 3) {
+    return texto
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean)
+      .some((palavra) => palavra.startsWith(termo))
+  }
+  return texto.includes(termo)
+}
+
 function usePersistentState<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(() => {
     try {
@@ -612,7 +630,7 @@ function App() {
   }, [familias, moradores, moradoresDetalhados, visitas])
 
   const resultadosBusca = useMemo(() => {
-    const termo = busca.toLowerCase().trim()
+    const termo = normalizarBusca(busca.trim())
     if (!termo) return moradoresDetalhados
     return moradoresDetalhados.filter((morador) =>
       [
@@ -620,15 +638,12 @@ function App() {
         morador.cpf,
         morador.cns,
         morador.nis,
-        morador.familia,
+        morador.familia.replace(/^familia\s+/i, ''),
         morador.endereco,
         morador.hipertenso ? 'hipertenso' : '',
-        morador.diabetico ? 'diabetico diabetico' : '',
-        morador.bolsaFamilia ? 'bolsa familia bolsa familia' : '',
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(termo),
+        morador.diabetico ? 'diabetico' : '',
+        morador.bolsaFamilia ? 'bolsa familia' : '',
+      ].some((valor) => correspondeBusca(valor, termo)),
     )
   }, [busca, moradoresDetalhados])
 

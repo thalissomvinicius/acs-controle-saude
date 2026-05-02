@@ -1220,7 +1220,7 @@ textarea:focus {
   }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 330px) {
   .topbar {
     grid-template-columns: 38px minmax(0, 1fr) 94px;
     padding-inline: 8px;
