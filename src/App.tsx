@@ -384,6 +384,11 @@ function adicionarDias(data: string, dias: number) {
   return alvo.toISOString().slice(0, 10)
 }
 
+function saldoDiasVisita(data: string, prazoDias = PRAZO_VISITA_DIAS) {
+  if (!data) return -1
+  return prazoDias - diasDesde(data)
+}
+
 function formatarData(data: string) {
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(`${data}T00:00:00`))
 }
@@ -857,6 +862,28 @@ function App() {
       ].some((valor) => correspondeBusca(valor, termo)),
     )
   }, [busca, moradoresDetalhados])
+
+  const familiasDashboard = useMemo(() => {
+    const prazoDias = configuracoes.diasParaVisitaAtrasada
+    return familiasComEndereco.filter((familia) => {
+      const saldo = saldoDiasVisita(familia.ultimaVisita, prazoDias)
+      if (filtroRapido === 'Hoje') return saldo <= 0
+      if (filtroRapido === 'Semana') return saldo <= 7
+      if (filtroRapido === 'Pendencias') return familia.status !== 'em_dia'
+      if (filtroRapido === 'Prioridades') {
+        const moradoresDaFamilia = moradoresDetalhados.filter((morador) => String(morador.familiaId) === String(familia.id))
+        return familia.status === 'atrasada' || moradoresDaFamilia.some((morador) => morador.vacinaPendente || (morador.gestante && !morador.preNatalEmDia))
+      }
+      return familia.status !== 'em_dia'
+    })
+  }, [configuracoes.diasParaVisitaAtrasada, familiasComEndereco, filtroRapido, moradoresDetalhados])
+
+  const moradoresDashboard = useMemo(() => {
+    if (filtroRapido !== 'Pendencias' && filtroRapido !== 'Prioridades') return resultadosBusca.slice(0, 5)
+    return resultadosBusca
+      .filter((morador) => pendenciaMorador(morador) !== 'Em dia')
+      .slice(0, 5)
+  }, [filtroRapido, resultadosBusca])
 
   const listaGrupo = useMemo(() => {
     const filtros: Record<string, (item: (typeof moradoresDetalhados)[number]) => boolean> = {
@@ -1584,8 +1611,8 @@ function App() {
               })}
             </div>
             <div className="two-column">
-              <ListaFamilias familias={familiasComEndereco.filter(f => f.status !== 'em_dia')} titulo={fraseQuantidade(familiasComEndereco.filter(f => f.status !== 'em_dia').length, 'familia prioritaria', 'familias prioritarias')} prazoVisitaDias={configuracoes.diasParaVisitaAtrasada} />
-              <ListaMoradores moradores={resultadosBusca.slice(0, 5)} titulo="Busca rapida" />
+              <ListaFamilias familias={familiasDashboard} titulo={fraseQuantidade(familiasDashboard.length, 'familia no filtro', 'familias no filtro')} prazoVisitaDias={configuracoes.diasParaVisitaAtrasada} />
+              <ListaMoradores moradores={moradoresDashboard} titulo="Busca rapida" />
             </div>
           </section>
         )}
