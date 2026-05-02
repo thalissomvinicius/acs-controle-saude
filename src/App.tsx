@@ -430,6 +430,17 @@ function correspondeBusca(valor: string, termo: string) {
   return texto.includes(termo)
 }
 
+function apenasDigitos(valor: string) {
+  return valor.replace(/\D/g, '')
+}
+
+function normalizarNumeroDecimal(valor: string) {
+  const limpo = valor.trim().replace(',', '.')
+  if (!limpo) return ''
+  const numero = Number(limpo)
+  return Number.isFinite(numero) ? String(numero) : ''
+}
+
 function usePersistentState<T>(key: string, initialValue: T) {
   const [value, setValue] = useState<T>(() => {
     try {
@@ -1056,8 +1067,38 @@ function App() {
     event.preventDefault()
     const form = event.currentTarget
     const dados = new FormData(form)
-    const cpf = String(dados.get('cpf'))
-    if (moradores.some((item) => item.cpf === cpf && String(item.id) !== String(moradorEditando?.id))) {
+    const cpf = apenasDigitos(String(dados.get('cpf')))
+    const cns = apenasDigitos(String(dados.get('cns')))
+    const nis = apenasDigitos(String(dados.get('nis')))
+    const peso = normalizarNumeroDecimal(String(dados.get('peso')))
+    const altura = normalizarNumeroDecimal(String(dados.get('altura')))
+
+    if (cpf.length !== 11) {
+      alert('Informe um CPF com 11 digitos.')
+      return
+    }
+
+    if (cns && cns.length !== 15) {
+      alert('Informe um CNS com 15 digitos ou deixe em branco.')
+      return
+    }
+
+    if (nis && nis.length !== 11) {
+      alert('Informe um NIS com 11 digitos ou deixe em branco.')
+      return
+    }
+
+    if (String(dados.get('peso')).trim() && !peso) {
+      alert('Informe um peso valido. Exemplo: 72,5')
+      return
+    }
+
+    if (String(dados.get('altura')).trim() && !altura) {
+      alert('Informe uma altura valida. Exemplo: 1,65')
+      return
+    }
+
+    if (moradores.some((item) => apenasDigitos(item.cpf) === cpf && String(item.id) !== String(moradorEditando?.id))) {
       alert('Ja existe um morador cadastrado com este CPF.')
       return
     }
@@ -1065,13 +1106,13 @@ function App() {
       familiaId: String(dados.get('familiaId')),
       nome: String(dados.get('nome')),
       cpf,
-      cns: String(dados.get('cns')),
-      nis: String(dados.get('nis')),
+      cns,
+      nis,
       nascimento: String(dados.get('nascimento')),
       sexo: String(dados.get('sexo')),
       telefone: String(dados.get('telefone')),
-      peso: String(dados.get('peso')),
-      altura: String(dados.get('altura')),
+      peso,
+      altura,
       responsavelFamiliar: dados.get('responsavelFamiliar') === 'on',
       bolsaFamilia: dados.get('bolsaFamilia') === 'on',
       gestante: dados.get('gestante') === 'on',
@@ -1701,15 +1742,15 @@ function App() {
                 </label>
                 <label>
                   CPF
-                  <input name="cpf" placeholder="000.000.000-00" defaultValue={moradorEditando?.cpf ?? ''} required />
+                  <input name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" defaultValue={moradorEditando?.cpf ?? ''} required />
                 </label>
                 <label>
                   CNS
-                  <input name="cns" placeholder="Cartao Nacional de Saude" defaultValue={moradorEditando?.cns ?? ''} />
+                  <input name="cns" inputMode="numeric" maxLength={15} placeholder="Cartao Nacional de Saude" defaultValue={moradorEditando?.cns ?? ''} />
                 </label>
                 <label>
                   NIS
-                  <input name="nis" placeholder="Numero de Identificacao Social" defaultValue={moradorEditando?.nis ?? ''} />
+                  <input name="nis" inputMode="numeric" maxLength={14} placeholder="Numero de Identificacao Social" defaultValue={moradorEditando?.nis ?? ''} />
                 </label>
                 <label>
                   Data de nascimento
@@ -1729,11 +1770,11 @@ function App() {
                 </label>
                 <label>
                   Peso
-                  <input name="peso" placeholder="Kg" defaultValue={moradorEditando?.peso ?? ''} />
+                  <input name="peso" inputMode="decimal" placeholder="Kg" defaultValue={moradorEditando?.peso ?? ''} />
                 </label>
                 <label>
                   Altura
-                  <input name="altura" placeholder="Metros. Ex.: 1,65" defaultValue={moradorEditando?.altura ?? ''} />
+                  <input name="altura" inputMode="decimal" placeholder="Metros. Ex.: 1,65" defaultValue={moradorEditando?.altura ?? ''} />
                 </label>
                 <label>
                   Familia/domicilio vinculado
