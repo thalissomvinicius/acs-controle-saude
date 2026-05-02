@@ -1,14 +1,14 @@
-# ACS Controle Saúde
+# ACS Controle Saude
 
-Sistema web responsivo para Agente Comunitário de Saúde acompanhar famílias, moradores, visitas domiciliares, pendências e indicadores prioritários.
+Sistema web responsivo para Agente Comunitario de Saude acompanhar familias, moradores, visitas domiciliares, pendencias e indicadores prioritarios.
 
 ## Stack
 
 - React + Vite + TypeScript
 - CSS responsivo mobile-first
-- Supabase como banco e autenticação
+- Supabase como banco e autenticacao
 - Vercel para hospedagem
-- Exportação PDF e Excel
+- Exportacao PDF e Excel
 
 ## Rodar localmente
 
@@ -17,7 +17,7 @@ npm install
 npm run dev
 ```
 
-O login local está em modo demonstração: qualquer usuário e senha entram no sistema. Quando as variáveis do Supabase forem configuradas, a autenticação real deve usar Supabase Auth.
+O login local sem Supabase fica em modo demonstracao apenas durante o desenvolvimento. Em build de producao, o acesso exige `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` configuradas.
 
 ## Configurar Supabase
 
@@ -34,10 +34,10 @@ VITE_SUPABASE_ANON_KEY=sua-chave-anon-publica
 
 ## Deploy na Vercel
 
-1. Suba o projeto para um repositório GitHub.
-2. Importe o repositório na Vercel.
-3. Configure as variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
-4. Use o comando de build padrão:
+1. Suba o projeto para um repositorio GitHub.
+2. Importe o repositorio na Vercel.
+3. Configure as variaveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
+4. Use o comando de build padrao:
 
 ```bash
 npm run build
@@ -48,28 +48,30 @@ npm run build
 - Login
 - Dashboard com indicadores
 - Logradouros
-- Famílias/domicílios
+- Familias/domicilios
 - Moradores
 - Visitas domiciliares
+- Caderneta vacinal
 - Indicadores por grupo
-- Relatórios com exportação PDF/Excel
-- Configurações
+- Relatorios com exportacao PDF/Excel
+- Configuracoes de unidade, microarea e prazo de visita
 
 ## Regras contempladas
 
 - Idade calculada automaticamente pela data de nascimento
-- Criança de 0 a 2 anos calculada automaticamente
+- Crianca de 0 a 2 anos calculada automaticamente
 - Idoso acima de 60 anos calculado automaticamente
-- Grupo "hipertensos e diabéticos"
+- Grupo "hipertensos e diabeticos"
 - Evita CPF duplicado no cadastro local
-- Histórico de visitas
-- Status de família atualizado ao registrar visita
-- Schema Supabase com RLS por usuário
+- Historico de visitas
+- Status de familia atualizado ao registrar visita
+- Schema Supabase com RLS por usuario
+- Configuracoes persistidas no Supabase quando conectado
 
-## Próximas integrações
+## Proximas integracoes
 
-- Trocar o login demo por Supabase Auth
-- Persistir CRUDs no Supabase em vez dos dados de demonstração em memória
-- Adicionar edição/exclusão com confirmação
-- Criar backups automáticos
+- Cadastro de usuario, recuperacao de senha e troca de senha
+- Backups automaticos reais
+- Validadores de CPF, CNS, NIS, peso e altura
+- Filtros funcionais no dashboard por hoje, semana, mes e prioridades
 - Adicionar testes end-to-end em telas mobile/tablet

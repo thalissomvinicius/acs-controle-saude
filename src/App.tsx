@@ -118,9 +118,23 @@ type VacinaRegistro = {
   observacoes: string
 }
 
+type ConfiguracoesApp = {
+  unidadeSaude: string
+  microarea: string
+  diasParaVisitaAtrasada: number
+  backupAutomatico: boolean
+}
+
 const hoje = new Date()
 const isoHoje = hoje.toISOString().slice(0, 10)
 const PRAZO_VISITA_DIAS = 30
+const configuracoesIniciais: ConfiguracoesApp = {
+  unidadeSaude: 'Posto da Feira',
+  microarea: 'Microarea principal',
+  diasParaVisitaAtrasada: PRAZO_VISITA_DIAS,
+  backupAutomatico: false,
+}
+const loginDemoPermitido = !import.meta.env.PROD && !supabaseConfigurado
 
 const logradourosIniciais: Logradouro[] = [
   { id: 1, bairro: 'Tucano', nome: 'Nove de Junho', tipo: 'Rua', quantidadeImoveis: 16, observacoes: 'Area central da microarea.' },
@@ -374,11 +388,11 @@ function formatarData(data: string) {
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(`${data}T00:00:00`))
 }
 
-function statusVisitaAutomatico(dataUltimaVisita: string, statusAtual: StatusVisita = 'pendente'): StatusVisita {
+function statusVisitaAutomatico(dataUltimaVisita: string, statusAtual: StatusVisita = 'pendente', prazoDias = PRAZO_VISITA_DIAS): StatusVisita {
   if (!dataUltimaVisita) return statusAtual
   const dias = diasDesde(dataUltimaVisita)
-  if (dias > PRAZO_VISITA_DIAS) return 'atrasada'
-  if (dias === PRAZO_VISITA_DIAS) return 'pendente'
+  if (dias > prazoDias) return 'atrasada'
+  if (dias >= prazoDias - 7) return 'pendente'
   return 'em_dia'
 }
 
@@ -522,6 +536,15 @@ function mapVacina(row: Record<string, unknown>): VacinaRegistro {
   }
 }
 
+function mapConfiguracoes(row: Record<string, unknown>): ConfiguracoesApp {
+  return {
+    unidadeSaude: String(row.unidade_saude ?? configuracoesIniciais.unidadeSaude),
+    microarea: String(row.microarea ?? configuracoesIniciais.microarea),
+    diasParaVisitaAtrasada: Number(row.dias_para_visita_atrasada ?? configuracoesIniciais.diasParaVisitaAtrasada),
+    backupAutomatico: Boolean(row.backup_automatico),
+  }
+}
+
 function statusTexto(status: StatusVisita | StatusRegistro | StatusVacina) {
   const mapa = {
     em_dia: 'Em dia',
@@ -548,6 +571,8 @@ function App() {
   const [moradores, setMoradores] = usePersistentState('acs:moradores', moradoresIniciais)
   const [visitas, setVisitas] = usePersistentState('acs:visitas', visitasIniciais)
   const [vacinas, setVacinas] = usePersistentState('acs:vacinas', vacinasIniciais)
+  const [configuracoes, setConfiguracoes] = usePersistentState('acs:configuracoes', configuracoesIniciais)
+  const [configuracoesSalvas, setConfiguracoesSalvas] = useState('')
   const [grupoAtivo, setGrupoAtivo] = useState('Vacinas pendentes')
   const [logradouroEditando, setLogradouroEditando] = useState<Logradouro | null>(null)
   const [familiaEditando, setFamiliaEditando] = useState<Familia | null>(null)
@@ -629,26 +654,27 @@ function App() {
       nome,
       email: user.email,
       cargo: 'ACS',
-      unidade_saude: 'Posto da Feira',
-      microarea: 'Microarea principal',
+      unidade_saude: configuracoes.unidadeSaude,
+      microarea: configuracoes.microarea,
       ativo: true,
     }
 
     const { error } = await supabase.from('usuarios').upsert(perfil, { onConflict: 'id' })
     if (error) console.warn('Nao foi possivel sincronizar perfil do usuario:', error.message)
-  }, [])
+  }, [configuracoes.microarea, configuracoes.unidadeSaude])
 
   const carregarDados = useCallback(async (userIdAtual: string) => {
     if (!supabase) return
-    const [logradourosDb, familiasDb, moradoresDb, visitasDb, medicamentosDb] = await Promise.all([
+    const [logradourosDb, familiasDb, moradoresDb, visitasDb, medicamentosDb, configuracoesDb] = await Promise.all([
       supabase.from('logradouros').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
       supabase.from('familias').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
       supabase.from('moradores').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
       supabase.from('visitas').select('*').eq('usuario_id', userIdAtual).order('data_visita', { ascending: false }),
       supabase.from('medicamentos').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
+      supabase.from('configuracoes').select('*').eq('usuario_id', userIdAtual).maybeSingle(),
     ])
 
-    const erro = logradourosDb.error || familiasDb.error || moradoresDb.error || visitasDb.error || medicamentosDb.error
+    const erro = logradourosDb.error || familiasDb.error || moradoresDb.error || visitasDb.error || medicamentosDb.error || configuracoesDb.error
     if (erro) throw erro
 
     const medicamentosPorMorador = new Map<string, string[]>()
@@ -665,6 +691,9 @@ function App() {
       return mapeado
     }))
     setVisitas((visitasDb.data ?? []).map(mapVisita))
+    if (configuracoesDb.data) {
+      setConfiguracoes(mapConfiguracoes(configuracoesDb.data))
+    }
 
     const vacinasDb = await supabase
       .from('vacinas_moradores')
@@ -677,7 +706,7 @@ function App() {
     } else {
       setVacinas((vacinasDb.data ?? []).map(mapVacina))
     }
-  }, [setFamilias, setLogradouros, setMoradores, setVacinas, setVisitas])
+  }, [setConfiguracoes, setFamilias, setLogradouros, setMoradores, setVacinas, setVisitas])
 
   async function obterUsuarioAutenticado() {
     if (!supabase) return ''
@@ -729,12 +758,12 @@ function App() {
         const logradouro = logradouros.find((item) => String(item.id) === String(familia.logradouroId))
         return {
           ...familia,
-          status: statusVisitaAutomatico(familia.ultimaVisita, familia.status),
+          status: statusVisitaAutomatico(familia.ultimaVisita, familia.status, configuracoes.diasParaVisitaAtrasada),
           endereco: `${logradouro?.tipo ?? 'Rua'} ${logradouro?.nome ?? ''}, ${familia.numero}`,
           bairro: logradouro?.bairro ?? '',
         }
       }),
-    [familias, logradouros],
+    [configuracoes.diasParaVisitaAtrasada, familias, logradouros],
   )
 
   const moradoresDetalhados = useMemo(
@@ -858,6 +887,11 @@ function App() {
       } finally {
         setCarregando(false)
       }
+      return
+    }
+
+    if (!loginDemoPermitido) {
+      setErroLogin('Supabase nao configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para liberar o acesso.')
       return
     }
 
@@ -1207,7 +1241,7 @@ function App() {
       preNatalAtualizado: dados.get('preNatalAtualizado') === 'on',
       medicamentoConfirmado: dados.get('medicamentoConfirmado') === 'on',
       observacoes: String(dados.get('observacoes')),
-      proximaVisita: String(dados.get('proximaVisita') || adicionarDias(data, PRAZO_VISITA_DIAS)),
+      proximaVisita: String(dados.get('proximaVisita') || adicionarDias(data, configuracoes.diasParaVisitaAtrasada)),
       status: String(dados.get('status')) as StatusRegistro,
     }
 
@@ -1285,6 +1319,40 @@ function App() {
     }
 
     if (visitaEditando && String(visitaEditando.id) === String(visita.id)) setVisitaEditando(null)
+  }
+
+  async function salvarConfiguracoes(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const form = event.currentTarget
+    const dados = new FormData(form)
+    const proximasConfiguracoes: ConfiguracoesApp = {
+      unidadeSaude: String(dados.get('unidadeSaude')).trim() || configuracoesIniciais.unidadeSaude,
+      microarea: String(dados.get('microarea')).trim() || configuracoesIniciais.microarea,
+      diasParaVisitaAtrasada: Math.max(1, Number(dados.get('diasParaVisitaAtrasada')) || PRAZO_VISITA_DIAS),
+      backupAutomatico: dados.get('backupAutomatico') === 'on',
+    }
+
+    if (supabase) {
+      const usuarioAtual = await obterUsuarioAutenticado()
+      const { error } = await supabase.from('configuracoes').upsert(
+        {
+          usuario_id: usuarioAtual,
+          unidade_saude: proximasConfiguracoes.unidadeSaude,
+          microarea: proximasConfiguracoes.microarea,
+          dias_para_visita_atrasada: proximasConfiguracoes.diasParaVisitaAtrasada,
+          backup_automatico: proximasConfiguracoes.backupAutomatico,
+        },
+        { onConflict: 'usuario_id' },
+      )
+      if (error) {
+        alert(error.message)
+        return
+      }
+    }
+
+    setConfiguracoes(proximasConfiguracoes)
+    setConfiguracoesSalvas('Configuracoes salvas.')
+    window.setTimeout(() => setConfiguracoesSalvas(''), 2600)
   }
 
   async function sair() {
@@ -1401,7 +1469,7 @@ function App() {
             </div>
             <div>
               <strong>ACS Saude</strong>
-              <small>Microarea Posto</small>
+              <small>{configuracoes.microarea}</small>
             </div>
           </div>
           <button className="icon-button mobile-only" onClick={() => setMenuAberto(false)} aria-label="Fechar menu">
@@ -1436,7 +1504,7 @@ function App() {
             <Menu />
           </button>
           <div>
-            <span>ACS Controle Saude</span>
+            <span>{configuracoes.unidadeSaude}</span>
             <strong>{menus.find((item) => item.id === tela)?.label}</strong>
           </div>
           <div className="search-box">
@@ -1475,7 +1543,7 @@ function App() {
               })}
             </div>
             <div className="two-column">
-              <ListaFamilias familias={familiasComEndereco.filter(f => f.status !== 'em_dia')} titulo={fraseQuantidade(familiasComEndereco.filter(f => f.status !== 'em_dia').length, 'familia prioritaria', 'familias prioritarias')} />
+              <ListaFamilias familias={familiasComEndereco.filter(f => f.status !== 'em_dia')} titulo={fraseQuantidade(familiasComEndereco.filter(f => f.status !== 'em_dia').length, 'familia prioritaria', 'familias prioritarias')} prazoVisitaDias={configuracoes.diasParaVisitaAtrasada} />
               <ListaMoradores moradores={resultadosBusca.slice(0, 5)} titulo="Busca rapida" />
             </div>
           </section>
@@ -1619,7 +1687,7 @@ function App() {
                 </div>
               </form>
             </CrudCard>
-            <ListaFamilias familias={familiasComEndereco} titulo="Cadastradas" onEdit={editarFamilia} onDelete={excluirFamilia} />
+            <ListaFamilias familias={familiasComEndereco} titulo="Cadastradas" prazoVisitaDias={configuracoes.diasParaVisitaAtrasada} onEdit={editarFamilia} onDelete={excluirFamilia} />
           </section>
         )}
 
@@ -1847,7 +1915,42 @@ function App() {
         {tela === 'configuracoes' && (
           <section className="screen two-column animate-in">
             <CrudCard title="Configuracoes">
-              <button className="primary-button">Salvar</button>
+              <form className="form-grid" onSubmit={salvarConfiguracoes} key={`${configuracoes.unidadeSaude}-${configuracoes.microarea}`}>
+                <label>
+                  Unidade de saude
+                  <input name="unidadeSaude" defaultValue={configuracoes.unidadeSaude} placeholder="Ex.: UBS Posto da Feira" required />
+                </label>
+                <label>
+                  Microarea
+                  <input name="microarea" defaultValue={configuracoes.microarea} placeholder="Ex.: Microarea 04" required />
+                </label>
+                <label>
+                  Dias para visita atrasada
+                  <input name="diasParaVisitaAtrasada" type="number" min="1" defaultValue={configuracoes.diasParaVisitaAtrasada} required />
+                </label>
+                <label className="check-item inline-check">
+                  <input name="backupAutomatico" type="checkbox" defaultChecked={configuracoes.backupAutomatico} />
+                  <span>Marcar backup automatico como ativo</span>
+                </label>
+                {configuracoesSalvas && <p className="form-success">{configuracoesSalvas}</p>}
+                <button className="primary-button">Salvar</button>
+              </form>
+            </CrudCard>
+            <CrudCard title="Ambiente">
+              <div className="settings-list">
+                <p>
+                  <strong>Banco de dados</strong>
+                  <span>{supabaseConfigurado ? 'Supabase conectado' : 'Modo demonstracao local'}</span>
+                </p>
+                <p>
+                  <strong>Login demo</strong>
+                  <span>{loginDemoPermitido ? 'Permitido apenas no desenvolvimento' : 'Bloqueado neste ambiente'}</span>
+                </p>
+                <p>
+                  <strong>Ciclo de visita</strong>
+                  <span>{configuracoes.diasParaVisitaAtrasada} dias</span>
+                </p>
+              </div>
             </CrudCard>
           </section>
         )}
@@ -1900,11 +2003,13 @@ function CheckGrid({ items, values }: { items: [string, string][]; values?: Reco
 function ListaFamilias({
   familias,
   titulo,
+  prazoVisitaDias,
   onEdit,
   onDelete,
 }: {
   familias: (Familia & { endereco: string; bairro: string })[]
   titulo: string
+  prazoVisitaDias: number
   onEdit?: (familia: Familia) => void
   onDelete?: (id: EntityId) => void
 }) {
@@ -1938,7 +2043,7 @@ function ListaFamilias({
             </div>
             <div className="family-body">
               <p>{textoUltimaVisita(familia.ultimaVisita)}</p>
-              <p className={`deadline-text ${familia.status}`}>{textoPrazoVisita(familia.ultimaVisita)}</p>
+              <p className={`deadline-text ${familia.status}`}>{textoPrazoVisita(familia.ultimaVisita, prazoVisitaDias)}</p>
               <div className="pill-row">
                 <span className={`status-pill ${familia.status}`}>{statusTexto(familia.status)}</span>
               </div>
@@ -2297,11 +2402,11 @@ function textoUltimaVisita(data: string) {
   return `Ultima visita: ${formatarData(data)} (${diasDesde(data)} dias)`
 }
 
-function textoPrazoVisita(data: string) {
-  if (!data) return `Primeira visita pendente. Ciclo padrao: ${PRAZO_VISITA_DIAS} dias.`
+function textoPrazoVisita(data: string, prazoDias = PRAZO_VISITA_DIAS) {
+  if (!data) return `Primeira visita pendente. Ciclo padrao: ${prazoDias} dias.`
   const dias = diasDesde(data)
-  const proxima = adicionarDias(data, PRAZO_VISITA_DIAS)
-  const saldo = PRAZO_VISITA_DIAS - dias
+  const proxima = adicionarDias(data, prazoDias)
+  const saldo = prazoDias - dias
   if (saldo > 0) return `Proxima visita ate ${formatarData(proxima)} (${saldo} dias restantes)`
   if (saldo === 0) return `Visita vence hoje (${formatarData(proxima)})`
   return `Visita atrasada ha ${Math.abs(saldo)} dias. Passar novamente.`
