@@ -562,14 +562,14 @@ textarea:focus {
 
 .visits-screen {
   display: grid;
-  grid-template-columns: minmax(360px, 0.85fr) minmax(540px, 1.15fr);
-  align-items: start;
-  gap: 18px;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  max-width: 1180px;
+  margin: 0 auto;
 }
 
 .visits-screen > .panel:first-child {
-  position: sticky;
-  top: 140px;
+  background: linear-gradient(180deg, #ffffff, #fbfdfc);
 }
 
 .screen > .two-column {
@@ -621,6 +621,24 @@ textarea:focus {
 
 .panel > .form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.visits-screen > .panel:first-child > .form-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+}
+
+.visits-screen > .panel:first-child > .form-grid label:has(textarea) {
+  grid-column: span 2;
+}
+
+.visits-screen > .panel:first-child > .form-grid .check-grid {
+  grid-column: span 2;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.visits-screen > .panel:first-child > .form-grid .form-actions {
+  grid-column: 1 / -1;
 }
 
 .panel > .form-grid label:has(textarea),
@@ -1011,15 +1029,15 @@ textarea:focus {
 
 .visit-card {
   border: 1px solid var(--line);
-  border-radius: 15px;
+  border-radius: 12px;
   background: var(--white);
   overflow: hidden;
-  box-shadow: 0 6px 16px rgba(24, 35, 29, 0.04);
+  box-shadow: none;
 }
 
 .visit-filters {
   display: grid;
-  grid-template-columns: minmax(220px, 1.4fr) repeat(2, minmax(132px, 0.75fr)) repeat(2, minmax(142px, 0.8fr));
+  grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, 0.8fr));
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -1028,7 +1046,7 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin: 0 0 14px;
+  margin: 0 0 12px;
 }
 
 .deadline-card {
@@ -1087,10 +1105,10 @@ textarea:focus {
 
 .visit-card-head {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(160px, 1fr) auto;
   align-items: center;
-  gap: 10px;
-  padding: 12px 13px;
+  gap: 12px;
+  padding: 11px 13px;
   background: var(--mint-50);
   border-bottom: 1px solid var(--line);
 }
@@ -1112,7 +1130,8 @@ textarea:focus {
 }
 
 .visit-card-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto auto;
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
@@ -1125,8 +1144,10 @@ textarea:focus {
 
 .visit-card-body {
   display: grid;
-  gap: 8px;
-  padding: 12px 13px 13px;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.1fr);
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px 13px 12px;
   color: var(--muted);
   font-size: 0.88rem;
 }
@@ -1138,6 +1159,7 @@ textarea:focus {
   gap: 8px;
   border-radius: 11px;
   padding: 9px 10px;
+  min-height: 58px;
 }
 
 .next-visit-box strong,
@@ -1162,6 +1184,7 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px 12px;
+  align-content: center;
 }
 
 .visit-meta-grid span {
@@ -1218,9 +1241,11 @@ textarea:focus {
 }
 
 .visit-card-body p {
-  margin: 4px 0 0;
+  grid-column: 1 / -1;
+  margin: 0;
   color: var(--ink);
   font-weight: 650;
+  line-height: 1.35;
 }
 
 .report-filters {
@@ -1243,16 +1268,16 @@ textarea:focus {
     grid-template-columns: repeat(3, minmax(150px, 1fr));
   }
 
-  .visits-screen {
-    grid-template-columns: 1fr;
-  }
-
-  .visits-screen > .panel:first-child {
-    position: static;
+  .visits-screen > .panel:first-child > .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .visit-filters {
-    grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(132px, 0.65fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .visit-filters label:first-child {
+    grid-column: span 2;
   }
 
   .report-controls .form-grid,
@@ -1441,6 +1466,20 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .visits-screen {
+    max-width: none;
+  }
+
+  .visits-screen > .panel:first-child > .form-grid,
+  .visits-screen > .panel:first-child > .form-grid .check-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .visits-screen > .panel:first-child > .form-grid label:has(textarea),
+  .visits-screen > .panel:first-child > .form-grid .check-grid {
+    grid-column: 1 / -1;
+  }
+
   .two-column {
     grid-template-columns: 1fr;
   }
@@ -1492,7 +1531,15 @@ textarea:focus {
     grid-template-columns: 1fr 1fr;
   }
 
+  .visit-filters label:first-child {
+    grid-column: 1 / -1;
+  }
+
   .visit-deadline-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .visit-card-body {
     grid-template-columns: 1fr;
   }
 
