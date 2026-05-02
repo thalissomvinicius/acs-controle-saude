@@ -2248,7 +2248,7 @@ function App() {
         )}
 
         {tela === 'visitas' && (
-          <section className="screen two-column animate-in">
+          <section className="screen visits-screen animate-in">
             <CrudCard title={visitaEditando ? 'Editar Visita' : 'Registrar Visita'}>
               <form className="form-grid" onSubmit={registrarVisita} key={visitaEditando?.id ?? 'nova-visita'}>
                 <label>
@@ -2907,10 +2907,12 @@ function ListaVisitas({
 
   const visitasComPrazo = visitas.map((visita) => {
     const dataProxima = visita.proximaVisita || adicionarDias(visita.data, PRAZO_VISITA_DIAS)
+    const prazo = statusProximaVisita(dataProxima)
     return {
       ...visita,
       dataProxima,
-      prazo: statusProximaVisita(dataProxima),
+      prazo,
+      textoPrazo: `${prazo.titulo} - ${prazo.detalhe}`,
     }
   })
 
@@ -2929,8 +2931,7 @@ function ListaVisitas({
       visita.pessoasEncontradas,
       visita.condicoes,
       visita.observacoes,
-      visita.prazo.titulo,
-      visita.prazo.detalhe,
+      visita.textoPrazo,
       statusTexto(visita.status),
     ].some((valor) => correspondeBusca(valor, termo))
     const depoisDoInicio = !dataInicio || visita.data >= dataInicio
@@ -3003,6 +3004,7 @@ function ListaVisitas({
                 <small>{visita.endereco || 'Endereço não informado'}</small>
               </div>
               <div className="visit-card-actions">
+                <span className={`status-pill deadline-status ${visita.prazo.classe}`}>{visita.prazo.titulo}</span>
                 <span className={`status-pill ${visita.status}`}>{statusTexto(visita.status)}</span>
                 <div className="card-actions">
                   {onEdit && (
@@ -3022,14 +3024,16 @@ function ListaVisitas({
               <div className={`next-visit-box ${visita.prazo.classe}`}>
                 <CalendarCheck size={17} />
                 <div>
-                  <strong>Próxima visita: {formatarData(visita.dataProxima)}</strong>
-                  <span>{visita.prazo.titulo} - {visita.prazo.detalhe}</span>
+                  <strong>{formatarData(visita.dataProxima)}</strong>
+                  <span>{visita.textoPrazo}</span>
                 </div>
               </div>
-              <span>Data: {formatarData(visita.data)}</span>
-              <span>ACS: {visita.acs || 'Não informado'}</span>
-              {visita.pessoasEncontradas && <span>Pessoas: {visita.pessoasEncontradas}</span>}
-              {visita.condicoes && <span>Condições: {visita.condicoes}</span>}
+              <div className="visit-meta-grid">
+                <span><strong>Realizada</strong>{formatarData(visita.data)}</span>
+                <span><strong>ACS</strong>{visita.acs || 'Não informado'}</span>
+                {visita.pessoasEncontradas && <span><strong>Pessoas</strong>{visita.pessoasEncontradas}</span>}
+                {visita.condicoes && <span><strong>Condições</strong>{visita.condicoes}</span>}
+              </div>
               {visita.observacoes && <p>{visita.observacoes}</p>}
             </div>
           </article>
