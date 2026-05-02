@@ -855,6 +855,18 @@ textarea:focus {
   line-height: 1.25;
 }
 
+.visit-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.visit-card-actions .card-actions {
+  margin-left: 0;
+}
+
 .visit-card-body {
   display: grid;
   gap: 5px;
@@ -1076,6 +1088,16 @@ textarea:focus {
 
   .indicator-card {
     grid-template-columns: 1fr;
+  }
+
+  .visit-card-head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .visit-card-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    width: 100%;
   }
 
   .visit-filters {

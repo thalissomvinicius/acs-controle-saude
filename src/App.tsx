@@ -483,6 +483,7 @@ function App() {
   const [logradouroEditando, setLogradouroEditando] = useState<Logradouro | null>(null)
   const [familiaEditando, setFamiliaEditando] = useState<Familia | null>(null)
   const [moradorEditando, setMoradorEditando] = useState<Morador | null>(null)
+  const [visitaEditando, setVisitaEditando] = useState<Visita | null>(null)
 
   function navegarPara(proximaTela: Tela) {
     setTela(proximaTela)
@@ -498,6 +499,55 @@ function App() {
   function editarMorador(morador: Morador) {
     setMoradorEditando(morador)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function editarVisita(visita: Visita) {
+    setVisitaEditando(visita)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function statusFamiliaPelaUltimaVisita(visitasDaFamilia: Visita[]): Pick<Familia, 'ultimaVisita' | 'status'> {
+    const ultima = [...visitasDaFamilia].sort((a, b) => b.data.localeCompare(a.data))[0]
+    if (!ultima) return { ultimaVisita: '', status: 'pendente' }
+    return {
+      ultimaVisita: ultima.data,
+      status: statusFamiliaAposRegistro(ultima.status),
+    }
+  }
+
+  function recalcularFamiliasLocais(proximasVisitas: Visita[], familiaIds: EntityId[]) {
+    setFamilias((atuais) =>
+      atuais.map((familia) => {
+        if (!familiaIds.some((id) => String(id) === String(familia.id))) return familia
+        return {
+          ...familia,
+          ...statusFamiliaPelaUltimaVisita(proximasVisitas.filter((visita) => String(visita.familiaId) === String(familia.id))),
+        }
+      }),
+    )
+  }
+
+  async function sincronizarFamiliaComUltimaVisita(familiaId: EntityId, usuarioAtual: string) {
+    if (!supabase) return
+    const { data, error } = await supabase
+      .from('visitas')
+      .select('data_visita,status_visita')
+      .eq('usuario_id', usuarioAtual)
+      .eq('familia_id', familiaId)
+      .order('data_visita', { ascending: false })
+      .limit(1)
+    if (error) throw error
+
+    const ultima = data?.[0]
+    const { error: updateError } = await supabase
+      .from('familias')
+      .update({
+        data_ultima_visita: ultima ? String(ultima.data_visita) : null,
+        status_visita: ultima ? statusFamiliaAposRegistro(String(ultima.status_visita) as StatusRegistro) : 'pendente',
+      })
+      .eq('id', familiaId)
+      .eq('usuario_id', usuarioAtual)
+    if (updateError) throw updateError
   }
 
   const garantirPerfil = useCallback(async (user: SupabaseUser) => {
@@ -1024,7 +1074,7 @@ function App() {
 
     if (supabase) {
       const usuarioAtual = await obterUsuarioAutenticado()
-      const { error } = await supabase.from('visitas').insert({
+      const payload = {
         usuario_id: usuarioAtual,
         familia_id: nova.familiaId,
         data_visita: nova.data,
@@ -1037,41 +1087,65 @@ function App() {
         observacoes_visita: nova.observacoes,
         proxima_visita_recomendada: nova.proximaVisita || null,
         status_visita: nova.status,
-      })
+      }
+      const query = visitaEditando
+        ? supabase.from('visitas').update(payload).eq('id', visitaEditando.id).select().single()
+        : supabase.from('visitas').insert(payload).select().single()
+      const { error } = await query
       if (error) {
         alert(error.message)
         return
       }
-      const { error: familiaError } = await supabase
-        .from('familias')
-        .update({
-          data_ultima_visita: nova.data,
-          status_visita: statusFamiliaAposRegistro(nova.status),
-        })
-        .eq('id', nova.familiaId)
-        .eq('usuario_id', usuarioAtual)
-      if (familiaError) {
-        alert(familiaError.message)
+      try {
+        await sincronizarFamiliaComUltimaVisita(nova.familiaId, usuarioAtual)
+        if (visitaEditando && String(visitaEditando.familiaId) !== String(nova.familiaId)) {
+          await sincronizarFamiliaComUltimaVisita(visitaEditando.familiaId, usuarioAtual)
+        }
+      } catch (errorSincronizacao) {
+        alert(errorSincronizacao instanceof Error ? errorSincronizacao.message : 'Erro ao atualizar familia da visita.')
         return
       }
       await carregarDados(usuarioAtual)
+      setVisitaEditando(null)
       form.reset()
       return
     }
 
-    setVisitas((atuais) => [
-      ...atuais,
-      {
-        id: Date.now(),
-        ...nova,
-      },
-    ])
-    setFamilias((atuais) =>
-      atuais.map((familia) =>
-        String(familia.id) === familiaId ? { ...familia, ultimaVisita: data, status: statusFamiliaAposRegistro(nova.status) } : familia,
-      ),
-    )
+    const visitaSalva = visitaEditando ? { ...visitaEditando, ...nova } : { id: Date.now(), ...nova }
+    const proximasVisitas = visitaEditando
+      ? visitas.map((visita) => String(visita.id) === String(visitaEditando.id) ? visitaSalva : visita)
+      : [...visitas, visitaSalva]
+    setVisitas(proximasVisitas)
+    recalcularFamiliasLocais(proximasVisitas, visitaEditando ? [visitaEditando.familiaId, familiaId] : [familiaId])
+    setVisitaEditando(null)
     form.reset()
+  }
+
+  async function excluirVisita(visita: Visita) {
+    const confirmar = window.confirm('Excluir esta visita do historico?')
+    if (!confirmar) return
+
+    if (supabase) {
+      const usuarioAtual = await obterUsuarioAutenticado()
+      const { error } = await supabase.from('visitas').delete().eq('id', visita.id)
+      if (error) {
+        alert(error.message)
+        return
+      }
+      try {
+        await sincronizarFamiliaComUltimaVisita(visita.familiaId, usuarioAtual)
+      } catch (errorSincronizacao) {
+        alert(errorSincronizacao instanceof Error ? errorSincronizacao.message : 'Erro ao atualizar familia da visita.')
+        return
+      }
+      await carregarDados(usuarioAtual)
+    } else {
+      const proximasVisitas = visitas.filter((item) => String(item.id) !== String(visita.id))
+      setVisitas(proximasVisitas)
+      recalcularFamiliasLocais(proximasVisitas, [visita.familiaId])
+    }
+
+    if (visitaEditando && String(visitaEditando.id) === String(visita.id)) setVisitaEditando(null)
   }
 
   async function sair() {
@@ -1499,11 +1573,11 @@ function App() {
 
         {tela === 'visitas' && (
           <section className="screen two-column animate-in">
-            <CrudCard title="Registrar Visita">
-              <form className="form-grid" onSubmit={registrarVisita}>
+            <CrudCard title={visitaEditando ? 'Editar Visita' : 'Registrar Visita'}>
+              <form className="form-grid" onSubmit={registrarVisita} key={visitaEditando?.id ?? 'nova-visita'}>
                 <label>
                   Familia visitada
-                  <select name="familiaId" required>
+                  <select name="familiaId" defaultValue={visitaEditando?.familiaId ?? ''} required>
                     {familias.map((item) => (
                       <option key={item.id} value={item.id}>{item.nome}</option>
                     ))}
@@ -1511,23 +1585,27 @@ function App() {
                 </label>
                 <label>
                   Data da visita domiciliar
-                  <input name="data" type="date" defaultValue={isoHoje} required />
+                  <input name="data" type="date" defaultValue={visitaEditando?.data ?? isoHoje} required />
                 </label>
                 <label>
                   ACS responsavel
-                  <input name="acs" placeholder="Nome da ACS" defaultValue="Adriellen Guimaraes" />
+                  <input name="acs" placeholder="Nome da ACS" defaultValue={visitaEditando?.acs ?? 'Adriellen Guimaraes'} />
                 </label>
                 <label>
                   Pessoas encontradas
-                  <input name="pessoasEncontradas" placeholder="Quem estava na residencia" />
+                  <input
+                    name="pessoasEncontradas"
+                    placeholder="Quem estava na residencia"
+                    defaultValue={visitaEditando?.pessoasEncontradas ?? ''}
+                  />
                 </label>
                 <label>
                   Condicoes acompanhadas
-                  <input name="condicoes" placeholder="Hipertensao, gestante, crianca, idoso..." />
+                  <input name="condicoes" placeholder="Hipertensao, gestante, crianca, idoso..." defaultValue={visitaEditando?.condicoes ?? ''} />
                 </label>
                 <label>
                   Proxima visita recomendada
-                  <input name="proximaVisita" type="date" />
+                  <input name="proximaVisita" type="date" defaultValue={visitaEditando?.proximaVisita ?? ''} />
                 </label>
                 <CheckGrid
                   items={[
@@ -1535,23 +1613,35 @@ function App() {
                     ['preNatalAtualizado', 'Pre-natal atualizado'],
                     ['medicamentoConfirmado', 'Medicamento confirmado'],
                   ]}
+                  values={visitaEditando ?? undefined}
                 />
                 <label>
                   Observacoes da visita
-                  <textarea name="observacoes" placeholder="Orientacoes, pendencias e encaminhamentos" />
+                  <textarea
+                    name="observacoes"
+                    placeholder="Orientacoes, pendencias e encaminhamentos"
+                    defaultValue={visitaEditando?.observacoes ?? ''}
+                  />
                 </label>
                 <label>
                   Status da visita
-                  <select name="status" defaultValue="concluida">
+                  <select name="status" defaultValue={visitaEditando?.status ?? 'concluida'}>
                     <option value="concluida">Concluida</option>
                     <option value="pendente">Pendente</option>
                     <option value="retorno_necessario">Retorno necessario</option>
                   </select>
                 </label>
-                <button className="primary-button">Registrar</button>
+                <div className="form-actions">
+                  <button className="primary-button">{visitaEditando ? 'Atualizar' : 'Registrar'}</button>
+                  {visitaEditando && (
+                    <button className="secondary-button" type="button" onClick={() => setVisitaEditando(null)}>
+                      Cancelar
+                    </button>
+                  )}
+                </div>
               </form>
             </CrudCard>
-            <ListaVisitas visitas={visitasDetalhadas} />
+            <ListaVisitas visitas={visitasDetalhadas} onEdit={editarVisita} onDelete={excluirVisita} />
           </section>
         )}
 
@@ -1768,8 +1858,12 @@ function ListaIndicador({
 
 function ListaVisitas({
   visitas,
+  onEdit,
+  onDelete,
 }: {
   visitas: (Visita & { familia: string; endereco: string })[]
+  onEdit?: (visita: Visita) => void
+  onDelete?: (visita: Visita) => void
 }) {
   const [buscaHistorico, setBuscaHistorico] = useState('')
   const [dataInicio, setDataInicio] = useState('')
@@ -1832,7 +1926,21 @@ function ListaVisitas({
                 <strong>{visita.familia}</strong>
                 <small>{visita.endereco || 'Endereco nao informado'}</small>
               </div>
-              <span className={`status-pill ${visita.status}`}>{statusTexto(visita.status)}</span>
+              <div className="visit-card-actions">
+                <span className={`status-pill ${visita.status}`}>{statusTexto(visita.status)}</span>
+                <div className="card-actions">
+                  {onEdit && (
+                    <button className="icon-action" type="button" title="Editar visita" onClick={() => onEdit(visita)}>
+                      <Edit3 size={15} />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button className="icon-action danger" type="button" title="Excluir visita" onClick={() => onDelete(visita)}>
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="visit-card-body">
               <span>Data: {formatarData(visita.data)}</span>
