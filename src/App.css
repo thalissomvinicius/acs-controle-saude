@@ -1840,8 +1840,7 @@ textarea:focus {
 /* Glass Panels */
 .panel, .card, .list-card, .family-card, .indicator-card, .metric-card, .visit-card, .vaccine-summary, .vaccine-row, .vaccine-form, .settings-list p, .deadline-card {
   background: rgba(255, 255, 255, 0.65) !important;
-  -webkit-backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: 
   backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.9) !important;
   box-shadow: 0 8px 32px rgba(15, 23, 42, 0.04) !important;
@@ -1858,8 +1857,7 @@ textarea:focus {
 /* Glass Topbar */
 .topbar {
   background: rgba(4, 120, 87, 0.85) !important;
-  -webkit-backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: 
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 10px 30px rgba(4, 120, 87, 0.2) !important;
@@ -1868,8 +1866,7 @@ textarea:focus {
 /* Sidebar */
 .sidebar {
   background: rgba(255, 255, 255, 0.8) !important;
-  -webkit-backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: 
   backdrop-filter: blur(24px);
   border-right: 1px solid rgba(255, 255, 255, 0.7) !important;
 }
@@ -1877,8 +1874,7 @@ textarea:focus {
 /* Bottom Nav */
 .mobile-bottom-nav {
   background: rgba(255, 255, 255, 0.85) !important;
-  -webkit-backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: 
   backdrop-filter: blur(24px);
   border-top: 1px solid rgba(255, 255, 255, 0.7) !important;
 }
@@ -1898,8 +1894,7 @@ textarea:focus {
 /* Inputs & Selects */
 input, select, textarea {
   background: rgba(255, 255, 255, 0.7) !important;
-  -webkit-backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: 
   backdrop-filter: blur(8px);
   border: 1px solid rgba(148, 163, 184, 0.3) !important;
   transition: all 0.2s ease !important;
@@ -1927,8 +1922,7 @@ input:focus, select:focus, textarea:focus {
 /* Priority Strip */
 .priority-strip {
   background: rgba(255, 255, 255, 0.5) !important;
-  -webkit-backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: 
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.6) !important;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03) !important;
@@ -1966,8 +1960,7 @@ h1, h2, h3, strong {
 }
 
 .login-card {
-  -webkit-backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: 
   backdrop-filter: blur(30px);
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(255, 255, 255, 1);
