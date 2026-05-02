@@ -513,25 +513,8 @@ function App() {
       ativo: true,
     }
 
-    const { error: insertError } = await supabase.from('usuarios').insert(perfil)
-    if (!insertError) return
-
-    if (insertError.code === '23505') {
-      const { error: updateError } = await supabase
-        .from('usuarios')
-        .update({
-          nome: perfil.nome,
-          email: perfil.email,
-          cargo: perfil.cargo,
-          unidade_saude: perfil.unidade_saude,
-          microarea: perfil.microarea,
-          ativo: perfil.ativo,
-        })
-        .eq('id', user.id)
-      if (!updateError) return
-    }
-
-    console.warn('Nao foi possivel sincronizar perfil do usuario:', insertError.message)
+    const { error } = await supabase.from('usuarios').upsert(perfil, { onConflict: 'id' })
+    if (error) console.warn('Nao foi possivel sincronizar perfil do usuario:', error.message)
   }, [])
 
   const carregarDados = useCallback(async (userIdAtual: string) => {
@@ -727,7 +710,8 @@ function App() {
 
   async function adicionarLogradouro(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const dados = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const dados = new FormData(form)
     const novo = {
       bairro: String(dados.get('bairro')),
       nome: String(dados.get('nome')),
@@ -757,7 +741,7 @@ function App() {
       const salvo = mapLogradouro(data)
       setLogradouros((atuais) => logradouroEditando ? atuais.map((item) => String(item.id) === String(salvo.id) ? salvo : item) : [...atuais, salvo])
       setLogradouroEditando(null)
-      event.currentTarget.reset()
+      form.reset()
       return
     }
 
@@ -773,7 +757,7 @@ function App() {
           ],
     )
     setLogradouroEditando(null)
-    event.currentTarget.reset()
+    form.reset()
   }
 
   async function excluirLogradouro(id: EntityId) {
@@ -797,7 +781,8 @@ function App() {
 
   async function adicionarFamilia(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const dados = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const dados = new FormData(form)
     const nova = {
       logradouroId: String(dados.get('logradouroId')),
       numero: String(dados.get('numero')),
@@ -839,7 +824,7 @@ function App() {
       const familiaSalva = mapFamilia(data)
       setFamilias((atuais) => familiaEditando ? atuais.map((item) => String(item.id) === String(familiaSalva.id) ? familiaSalva : item) : [...atuais, familiaSalva])
       setFamiliaEditando(null)
-      event.currentTarget.reset()
+      form.reset()
       return
     }
 
@@ -855,7 +840,7 @@ function App() {
           ],
     )
     setFamiliaEditando(null)
-    event.currentTarget.reset()
+    form.reset()
   }
 
   async function excluirFamilia(id: EntityId) {
@@ -879,7 +864,8 @@ function App() {
 
   async function adicionarMorador(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const dados = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const dados = new FormData(form)
     const cpf = String(dados.get('cpf'))
     if (moradores.some((item) => item.cpf === cpf && String(item.id) !== String(moradorEditando?.id))) {
       alert('Ja existe um morador cadastrado com este CPF.')
@@ -965,7 +951,7 @@ function App() {
       }
       setMoradores((atuais) => moradorEditando ? atuais.map((item) => String(item.id) === String(moradorSalvo.id) ? moradorSalvo : item) : [...atuais, moradorSalvo])
       setMoradorEditando(null)
-      event.currentTarget.reset()
+      form.reset()
       return
     }
 
@@ -981,7 +967,7 @@ function App() {
           ],
     )
     setMoradorEditando(null)
-    event.currentTarget.reset()
+    form.reset()
   }
 
   async function excluirMorador(id: EntityId) {
@@ -1003,7 +989,8 @@ function App() {
 
   async function registrarVisita(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const dados = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const dados = new FormData(form)
     const familiaId = String(dados.get('familiaId'))
     const data = String(dados.get('data'))
     const nova = {
@@ -1053,7 +1040,7 @@ function App() {
         return
       }
       await carregarDados(usuarioAtual)
-      event.currentTarget.reset()
+      form.reset()
       return
     }
 
@@ -1069,7 +1056,7 @@ function App() {
         String(familia.id) === familiaId ? { ...familia, ultimaVisita: data, status: statusFamiliaAposRegistro(nova.status) } : familia,
       ),
     )
-    event.currentTarget.reset()
+    form.reset()
   }
 
   async function sair() {
