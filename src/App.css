@@ -805,6 +805,11 @@ textarea:focus {
   gap: 14px;
 }
 
+.vaccine-screen {
+  max-width: 980px;
+  margin-inline: auto;
+}
+
 .vaccine-form {
   border: 1px solid var(--line);
   border-radius: 15px;
@@ -1197,7 +1202,7 @@ textarea:focus {
     bottom: 0;
     z-index: 18;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 2px;
     padding: 6px 7px max(6px, env(safe-area-inset-bottom));
     background: rgba(255, 255, 255, 0.96);

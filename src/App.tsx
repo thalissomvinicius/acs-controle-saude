@@ -37,6 +37,7 @@ type Tela =
   | 'familias'
   | 'moradores'
   | 'visitas'
+  | 'vacinas'
   | 'indicadores'
   | 'relatorios'
   | 'configuracoes'
@@ -344,6 +345,7 @@ const menus = [
   { id: 'familias' as Tela, label: 'Familias', icon: Home },
   { id: 'moradores' as Tela, label: 'Moradores', icon: UsersRound },
   { id: 'visitas' as Tela, label: 'Visitas', icon: CalendarCheck },
+  { id: 'vacinas' as Tela, label: 'Vacinas', icon: Syringe },
   { id: 'indicadores' as Tela, label: 'Indicadores', icon: HeartPulse },
   { id: 'relatorios' as Tela, label: 'Relatorios', icon: ClipboardList },
   { id: 'configuracoes' as Tela, label: 'Configuracoes', icon: Settings },
@@ -1710,15 +1712,10 @@ function App() {
                 titulo="Lista"
                 onEdit={editarMorador}
                 onDelete={excluirMorador}
-                onVaccines={(morador) => setMoradorVacinaId(morador.id)}
-              />
-              <CadernetaVacinal
-                moradores={moradoresDetalhados}
-                moradorId={moradorVacinaSelecionadoId}
-                registros={vacinas}
-                onSelectMorador={setMoradorVacinaId}
-                onSave={salvarVacinaMorador}
-                onDelete={excluirVacinaMorador}
+                onVaccines={(morador) => {
+                  setMoradorVacinaId(morador.id)
+                  navegarPara('vacinas')
+                }}
               />
             </div>
           </section>
@@ -1798,6 +1795,19 @@ function App() {
           </section>
         )}
 
+        {tela === 'vacinas' && (
+          <section className="screen vaccine-screen animate-in">
+            <CadernetaVacinal
+              moradores={moradoresDetalhados}
+              moradorId={moradorVacinaSelecionadoId}
+              registros={vacinas}
+              onSelectMorador={setMoradorVacinaId}
+              onSave={salvarVacinaMorador}
+              onDelete={excluirVacinaMorador}
+            />
+          </section>
+        )}
+
         {tela === 'indicadores' && (
           <section className="screen animate-in">
             <div className="indicator-tabs">
@@ -1847,6 +1857,7 @@ function App() {
             { id: 'dashboard' as Tela, label: 'Inicio', icon: Activity },
             { id: 'familias' as Tela, label: 'Familias', icon: Home },
             { id: 'visitas' as Tela, label: 'Visitas', icon: CalendarCheck },
+            { id: 'vacinas' as Tela, label: 'Vacinas', icon: Syringe },
             { id: 'indicadores' as Tela, label: 'Alertas', icon: HeartPulse },
             { id: 'moradores' as Tela, label: 'Busca', icon: Search },
           ].map((item) => {
