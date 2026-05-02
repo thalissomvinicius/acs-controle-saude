@@ -217,6 +217,22 @@ textarea:focus {
   opacity: 0.72;
 }
 
+.login-mode-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-mode-actions button {
+  border: 0;
+  background: transparent;
+  color: var(--green-800);
+  font-size: 0.86rem;
+  font-weight: 820;
+  padding: 6px 8px;
+}
+
 .secondary-button {
   border-radius: 12px;
   padding: 0 14px;

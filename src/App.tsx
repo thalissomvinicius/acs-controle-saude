@@ -41,6 +41,7 @@ type Tela =
   | 'indicadores'
   | 'relatorios'
   | 'configuracoes'
+type ModoAuth = 'entrar' | 'cadastro' | 'recuperar'
 
 type EntityId = string | number
 
@@ -578,6 +579,8 @@ function App() {
   const [carregando, setCarregando] = useState(supabaseConfigurado)
   const [usuarioId, setUsuarioId] = useState('')
   const [erroLogin, setErroLogin] = useState('')
+  const [mensagemLogin, setMensagemLogin] = useState('')
+  const [modoAuth, setModoAuth] = useState<ModoAuth>('entrar')
   const [tela, setTela] = useState<Tela>('dashboard')
   const [menuAberto, setMenuAberto] = useState(false)
   const [busca, setBusca] = useState('')
@@ -595,6 +598,12 @@ function App() {
   const [moradorEditando, setMoradorEditando] = useState<Morador | null>(null)
   const [visitaEditando, setVisitaEditando] = useState<Visita | null>(null)
   const [moradorVacinaId, setMoradorVacinaId] = useState<EntityId | ''>('')
+
+  function alterarModoAuth(proximoModo: ModoAuth) {
+    setModoAuth(proximoModo)
+    setErroLogin('')
+    setMensagemLogin('')
+  }
 
   function navegarPara(proximaTela: Tela) {
     setTela(proximaTela)
@@ -906,6 +915,7 @@ function App() {
   async function entrar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setErroLogin('')
+    setMensagemLogin('')
     const dados = new FormData(event.currentTarget)
     const email = String(dados.get('usuario')).trim()
     const senha = String(dados.get('senha'))
@@ -913,6 +923,37 @@ function App() {
     if (supabase) {
       setCarregando(true)
       try {
+        if (modoAuth === 'recuperar') {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin,
+          })
+          if (error) throw error
+          setMensagemLogin('Enviamos as instrucoes de recuperacao para o e-mail informado.')
+          return
+        }
+
+        if (modoAuth === 'cadastro') {
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password: senha,
+            options: {
+              emailRedirectTo: window.location.origin,
+            },
+          })
+          if (error) throw error
+          if (data.user && !data.session) {
+            setMensagemLogin('Conta criada. Confira seu e-mail para confirmar o acesso.')
+            setModoAuth('entrar')
+            return
+          }
+          if (!data.user) throw new Error('Cadastro nao retornou usuario.')
+          await garantirPerfil(data.user)
+          setUsuarioId(data.user.id)
+          setLogado(true)
+          await carregarDados(data.user.id)
+          return
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
         if (error) throw error
         if (!data.user) throw new Error('Login nao retornou usuario.')
@@ -925,6 +966,11 @@ function App() {
       } finally {
         setCarregando(false)
       }
+      return
+    }
+
+    if (modoAuth !== 'entrar') {
+      setErroLogin('Cadastro e recuperacao de senha exigem Supabase configurado.')
       return
     }
 
@@ -1506,21 +1552,47 @@ function App() {
             <Activity size={32} />
           </div>
           <p className="eyebrow">Sistema ACS</p>
-          <h1>Bem-vindo</h1>
-          <p className="login-copy">Gerencie visitas e indicadores com facilidade.</p>
+          <h1>{modoAuth === 'cadastro' ? 'Criar conta' : modoAuth === 'recuperar' ? 'Recuperar senha' : 'Bem-vindo'}</h1>
+          <p className="login-copy">
+            {modoAuth === 'cadastro'
+              ? 'Cadastre seu acesso para sincronizar os dados da microarea.'
+              : modoAuth === 'recuperar'
+                ? 'Informe seu e-mail para receber o link de recuperacao.'
+                : 'Gerencie visitas e indicadores com facilidade.'}
+          </p>
           <form onSubmit={entrar} className="form-grid">
             <label>
               E-mail
               <input name="usuario" autoComplete="email" placeholder="drica@admin.com" type="email" required />
             </label>
-            <label>
-              Senha
-              <input name="senha" type="password" autoComplete="current-password" placeholder="********" required />
-            </label>
+            {modoAuth !== 'recuperar' && (
+              <label>
+                Senha
+                <input name="senha" type="password" autoComplete={modoAuth === 'cadastro' ? 'new-password' : 'current-password'} placeholder="********" minLength={6} required />
+              </label>
+            )}
             {erroLogin && <p className="form-error">{erroLogin}</p>}
+            {mensagemLogin && <p className="form-success">{mensagemLogin}</p>}
             <button className="primary-button" type="submit" disabled={carregando}>
-              {carregando ? 'Entrando...' : 'Entrar'}
+              {carregando ? 'Aguarde...' : modoAuth === 'cadastro' ? 'Criar conta' : modoAuth === 'recuperar' ? 'Enviar link' : 'Entrar'}
             </button>
+            <div className="login-mode-actions">
+              {modoAuth !== 'entrar' && (
+                <button type="button" onClick={() => alterarModoAuth('entrar')}>
+                  Entrar
+                </button>
+              )}
+              {modoAuth !== 'cadastro' && (
+                <button type="button" onClick={() => alterarModoAuth('cadastro')}>
+                  Criar conta
+                </button>
+              )}
+              {modoAuth !== 'recuperar' && (
+                <button type="button" onClick={() => alterarModoAuth('recuperar')}>
+                  Esqueci a senha
+                </button>
+              )}
+            </div>
           </form>
         </section>
       </main>

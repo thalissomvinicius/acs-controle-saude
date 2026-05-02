@@ -55,6 +55,7 @@ npm run build
 - Indicadores por grupo
 - Relatorios com exportacao PDF/Excel
 - Configuracoes de unidade, microarea e prazo de visita
+- Criacao de conta e recuperacao de senha via Supabase Auth
 
 ## Regras contempladas
 
@@ -70,7 +71,7 @@ npm run build
 
 ## Proximas integracoes
 
-- Cadastro de usuario, recuperacao de senha e troca de senha
+- Troca de senha dentro do sistema
 - Backups automaticos reais
 - Validadores de CPF, CNS, NIS, peso e altura
 - Filtros funcionais no dashboard por hoje, semana, mes e prioridades
