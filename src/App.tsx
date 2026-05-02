@@ -416,6 +416,56 @@ function saldoDiasVisita(data: string, prazoDias = PRAZO_VISITA_DIAS) {
   return prazoDias - diasDesde(data)
 }
 
+function diasAteData(data: string) {
+  if (!data) return null
+  const base = new Date(`${isoHoje}T00:00:00`)
+  const alvo = new Date(`${data}T00:00:00`)
+  return Math.round((alvo.getTime() - base.getTime()) / 86_400_000)
+}
+
+function statusProximaVisita(data: string) {
+  const saldo = diasAteData(data)
+  if (saldo === null) {
+    return {
+      classe: 'sem_data',
+      titulo: 'Sem data',
+      detalhe: 'Defina a próxima visita',
+      dias: null,
+    }
+  }
+  if (saldo < 0) {
+    const dias = Math.abs(saldo)
+    return {
+      classe: 'atrasada',
+      titulo: 'Atrasada',
+      detalhe: `${fraseQuantidade(dias, 'dia de atraso', 'dias de atraso')}`,
+      dias: saldo,
+    }
+  }
+  if (saldo === 0) {
+    return {
+      classe: 'proxima',
+      titulo: 'Vence hoje',
+      detalhe: 'Visita recomendada para hoje',
+      dias: saldo,
+    }
+  }
+  if (saldo <= 7) {
+    return {
+      classe: 'proxima',
+      titulo: 'Próxima',
+      detalhe: `${fraseQuantidade(saldo, 'dia restante', 'dias restantes')}`,
+      dias: saldo,
+    }
+  }
+  return {
+    classe: 'em_dia',
+    titulo: 'Agendada',
+    detalhe: `${fraseQuantidade(saldo, 'dia restante', 'dias restantes')}`,
+    dias: saldo,
+  }
+}
+
 function formatarData(data: string) {
   if (!data) return '-'
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(`${data}T00:00:00`))
@@ -2853,8 +2903,24 @@ function ListaVisitas({
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
   const [statusFiltro, setStatusFiltro] = useState('')
+  const [prazoFiltro, setPrazoFiltro] = useState('')
 
-  const visitasFiltradas = visitas.filter((visita) => {
+  const visitasComPrazo = visitas.map((visita) => {
+    const dataProxima = visita.proximaVisita || adicionarDias(visita.data, PRAZO_VISITA_DIAS)
+    return {
+      ...visita,
+      dataProxima,
+      prazo: statusProximaVisita(dataProxima),
+    }
+  })
+
+  const resumoPrazo = {
+    atrasadas: visitasComPrazo.filter((visita) => visita.prazo.classe === 'atrasada').length,
+    proximas: visitasComPrazo.filter((visita) => visita.prazo.classe === 'proxima').length,
+    agendadas: visitasComPrazo.filter((visita) => visita.prazo.classe === 'em_dia').length,
+  }
+
+  const visitasFiltradas = visitasComPrazo.filter((visita) => {
     const termo = normalizarBusca(buscaHistorico.trim())
     const dentroDaBusca = !termo || [
       visita.familia,
@@ -2863,19 +2929,36 @@ function ListaVisitas({
       visita.pessoasEncontradas,
       visita.condicoes,
       visita.observacoes,
+      visita.prazo.titulo,
+      visita.prazo.detalhe,
       statusTexto(visita.status),
     ].some((valor) => correspondeBusca(valor, termo))
     const depoisDoInicio = !dataInicio || visita.data >= dataInicio
     const antesDoFim = !dataFim || visita.data <= dataFim
     const statusOk = !statusFiltro || visita.status === statusFiltro
-    return dentroDaBusca && depoisDoInicio && antesDoFim && statusOk
-  })
+    const prazoOk = !prazoFiltro || visita.prazo.classe === prazoFiltro
+    return dentroDaBusca && depoisDoInicio && antesDoFim && statusOk && prazoOk
+  }).sort((a, b) => a.dataProxima.localeCompare(b.dataProxima))
 
   return (
     <section className="panel">
       <div className="panel-title-row">
         <h2>Visitas registradas</h2>
         <span>{visitasFiltradas.length}</span>
+      </div>
+      <div className="visit-deadline-summary">
+        <article className="deadline-card atrasada">
+          <strong>{resumoPrazo.atrasadas}</strong>
+          <span>Atrasadas</span>
+        </article>
+        <article className="deadline-card proxima">
+          <strong>{resumoPrazo.proximas}</strong>
+          <span>Próximas ou hoje</span>
+        </article>
+        <article className="deadline-card em_dia">
+          <strong>{resumoPrazo.agendadas}</strong>
+          <span>Agendadas</span>
+        </article>
       </div>
       <div className="visit-filters">
         <label>
@@ -2897,6 +2980,15 @@ function ListaVisitas({
             <option value="concluida">Concluída</option>
             <option value="pendente">Pendente</option>
             <option value="retorno_necessario">Retorno necessário</option>
+          </select>
+        </label>
+        <label>
+          Prazo
+          <select value={prazoFiltro} onChange={(event) => setPrazoFiltro(event.target.value)}>
+            <option value="">Todos</option>
+            <option value="atrasada">Atrasadas</option>
+            <option value="proxima">Próximas</option>
+            <option value="em_dia">Agendadas</option>
           </select>
         </label>
       </div>
@@ -2927,11 +3019,17 @@ function ListaVisitas({
               </div>
             </div>
             <div className="visit-card-body">
+              <div className={`next-visit-box ${visita.prazo.classe}`}>
+                <CalendarCheck size={17} />
+                <div>
+                  <strong>Próxima visita: {formatarData(visita.dataProxima)}</strong>
+                  <span>{visita.prazo.titulo} - {visita.prazo.detalhe}</span>
+                </div>
+              </div>
               <span>Data: {formatarData(visita.data)}</span>
               <span>ACS: {visita.acs || 'Não informado'}</span>
               {visita.pessoasEncontradas && <span>Pessoas: {visita.pessoasEncontradas}</span>}
               {visita.condicoes && <span>Condições: {visita.condicoes}</span>}
-              {visita.proximaVisita && <span>Próxima: {formatarData(visita.proximaVisita)}</span>}
               {visita.observacoes && <p>{visita.observacoes}</p>}
             </div>
           </article>

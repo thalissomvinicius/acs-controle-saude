@@ -1007,9 +1007,55 @@ textarea:focus {
 
 .visit-filters {
   display: grid;
-  grid-template-columns: minmax(180px, 1.2fr) repeat(3, minmax(110px, 0.8fr));
+  grid-template-columns: minmax(180px, 1.2fr) repeat(4, minmax(110px, 0.8fr));
   gap: 10px;
   margin-bottom: 14px;
+}
+
+.visit-deadline-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 2px 0 14px;
+}
+
+.deadline-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: var(--soft);
+}
+
+.deadline-card strong,
+.deadline-card span {
+  display: block;
+}
+
+.deadline-card strong {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.deadline-card span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.deadline-card.atrasada {
+  background: var(--red-100);
+  color: var(--red-600);
+}
+
+.deadline-card.proxima {
+  background: var(--amber-100);
+  color: var(--amber-700);
+}
+
+.deadline-card.em_dia {
+  background: var(--mint-100);
+  color: var(--green-800);
 }
 
 .visit-filters label {
@@ -1071,6 +1117,52 @@ textarea:focus {
   padding: 13px;
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+.next-visit-box {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  border-radius: 12px;
+  padding: 10px 11px;
+  margin-bottom: 4px;
+}
+
+.next-visit-box strong,
+.next-visit-box span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.next-visit-box strong {
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.next-visit-box span {
+  margin-top: 2px;
+  font-weight: 800;
+}
+
+.next-visit-box.atrasada {
+  background: var(--red-100);
+  color: var(--red-600);
+}
+
+.next-visit-box.proxima {
+  background: var(--amber-100);
+  color: var(--amber-700);
+}
+
+.next-visit-box.em_dia {
+  background: var(--mint-100);
+  color: var(--green-800);
+}
+
+.next-visit-box.sem_data {
+  background: var(--soft);
+  color: var(--muted);
 }
 
 .visit-card-body p {
@@ -1333,6 +1425,10 @@ textarea:focus {
 
   .visit-filters {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .visit-deadline-summary {
+    grid-template-columns: 1fr;
   }
 
   .indicator-actions {
