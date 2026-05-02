@@ -107,6 +107,7 @@ type Visita = {
 
 const hoje = new Date()
 const isoHoje = hoje.toISOString().slice(0, 10)
+const PRAZO_VISITA_DIAS = 30
 
 const logradourosIniciais: Logradouro[] = [
   { id: 1, bairro: 'Tucano', nome: 'Nove de Junho', tipo: 'Rua', quantidadeImoveis: 16, observacoes: 'Area central da microarea.' },
@@ -309,8 +310,26 @@ function diasDesde(data: string) {
   return Math.max(0, Math.floor((hoje.getTime() - alvo.getTime()) / 86_400_000))
 }
 
+function adicionarDias(data: string, dias: number) {
+  const alvo = new Date(`${data}T00:00:00`)
+  alvo.setUTCDate(alvo.getUTCDate() + dias)
+  return alvo.toISOString().slice(0, 10)
+}
+
 function formatarData(data: string) {
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(`${data}T00:00:00`))
+}
+
+function statusVisitaAutomatico(dataUltimaVisita: string, statusAtual: StatusVisita = 'pendente'): StatusVisita {
+  if (!dataUltimaVisita) return statusAtual
+  const dias = diasDesde(dataUltimaVisita)
+  if (dias > PRAZO_VISITA_DIAS) return 'atrasada'
+  if (dias === PRAZO_VISITA_DIAS) return 'pendente'
+  return 'em_dia'
+}
+
+function statusFamiliaAposRegistro(status: StatusRegistro): StatusVisita {
+  return status === 'concluida' ? 'em_dia' : 'pendente'
 }
 
 function escaparCelula(valor: string | number) {
@@ -582,6 +601,7 @@ function App() {
         const logradouro = logradouros.find((item) => String(item.id) === String(familia.logradouroId))
         return {
           ...familia,
+          status: statusVisitaAutomatico(familia.ultimaVisita, familia.status),
           endereco: `${logradouro?.tipo ?? 'Rua'} ${logradouro?.nome ?? ''}, ${familia.numero}`,
           bairro: logradouro?.bairro ?? '',
         }
@@ -614,8 +634,8 @@ function App() {
       { label: 'Total de familias', valor: familias.length, icon: Home, status: 'neutro' },
       { label: 'Total de moradores', valor: moradores.length, icon: UsersRound, status: 'neutro' },
       { label: 'Visitas no mes', valor: visitasMes, icon: CalendarCheck, status: 'ok' },
-      { label: 'Visitas pendentes', valor: familias.filter((item) => item.status === 'pendente').length, icon: ClipboardList, status: 'atencao' },
-      { label: 'Visitas atrasadas', valor: familias.filter((item) => item.status === 'atrasada').length, icon: AlertTriangle, status: 'risco' },
+      { label: 'Visitas pendentes', valor: familiasComEndereco.filter((item) => item.status === 'pendente').length, icon: ClipboardList, status: 'atencao' },
+      { label: 'Visitas atrasadas', valor: familiasComEndereco.filter((item) => item.status === 'atrasada').length, icon: AlertTriangle, status: 'risco' },
       { label: 'Gestantes', valor: moradores.filter((item) => item.gestante).length, icon: HeartPulse, status: 'atencao' },
       { label: 'Criancas 0 a 2', valor: moradoresDetalhados.filter((item) => item.crianca).length, icon: Baby, status: 'atencao' },
       { label: 'Idosos 60+', valor: moradoresDetalhados.filter((item) => item.idoso).length, icon: UserRound, status: 'neutro' },
@@ -627,7 +647,7 @@ function App() {
       { label: 'Vacinas pendentes', valor: moradores.filter((item) => !item.vacinaEmDia).length, icon: Syringe, status: 'risco' },
       { label: 'Pre-natal pendente', valor: moradores.filter((item) => item.gestante && !item.preNatalEmDia).length, icon: Baby, status: 'risco' },
     ]
-  }, [familias, moradores, moradoresDetalhados, visitas])
+  }, [familias, familiasComEndereco, moradores, moradoresDetalhados, visitas])
 
   const resultadosBusca = useMemo(() => {
     const termo = normalizarBusca(busca.trim())
@@ -927,7 +947,7 @@ function App() {
       preNatalAtualizado: dados.get('preNatalAtualizado') === 'on',
       medicamentoConfirmado: dados.get('medicamentoConfirmado') === 'on',
       observacoes: String(dados.get('observacoes')),
-      proximaVisita: String(dados.get('proximaVisita')),
+      proximaVisita: String(dados.get('proximaVisita') || adicionarDias(data, PRAZO_VISITA_DIAS)),
       status: String(dados.get('status')) as StatusRegistro,
     }
 
@@ -951,6 +971,18 @@ function App() {
         alert(error.message)
         return
       }
+      const { error: familiaError } = await supabase
+        .from('familias')
+        .update({
+          data_ultima_visita: nova.data,
+          status_visita: statusFamiliaAposRegistro(nova.status),
+        })
+        .eq('id', nova.familiaId)
+        .eq('usuario_id', usuarioAtual)
+      if (familiaError) {
+        alert(familiaError.message)
+        return
+      }
       await carregarDados(usuarioAtual)
       event.currentTarget.reset()
       return
@@ -965,7 +997,7 @@ function App() {
     ])
     setFamilias((atuais) =>
       atuais.map((familia) =>
-        String(familia.id) === familiaId ? { ...familia, ultimaVisita: data, status: dados.get('status') === 'concluida' ? 'em_dia' : 'pendente' } : familia,
+        String(familia.id) === familiaId ? { ...familia, ultimaVisita: data, status: statusFamiliaAposRegistro(nova.status) } : familia,
       ),
     )
     event.currentTarget.reset()
@@ -1159,7 +1191,7 @@ function App() {
               })}
             </div>
             <div className="two-column">
-              <ListaFamilias familias={familiasComEndereco.filter(f => f.status !== 'em_dia')} titulo={fraseQuantidade(familias.filter(f => f.status !== 'em_dia').length, 'familia prioritaria', 'familias prioritarias')} />
+              <ListaFamilias familias={familiasComEndereco.filter(f => f.status !== 'em_dia')} titulo={fraseQuantidade(familiasComEndereco.filter(f => f.status !== 'em_dia').length, 'familia prioritaria', 'familias prioritarias')} />
               <ListaMoradores moradores={resultadosBusca.slice(0, 5)} titulo="Busca rapida" />
             </div>
           </section>
@@ -1541,6 +1573,7 @@ function ListaFamilias({ familias, titulo }: { familias: (Familia & { endereco: 
             </div>
             <div className="family-body">
               <p>{textoUltimaVisita(familia.ultimaVisita)}</p>
+              <p className={`deadline-text ${familia.status}`}>{textoPrazoVisita(familia.ultimaVisita)}</p>
               <div className="pill-row">
                 <span className={`status-pill ${familia.status}`}>{statusTexto(familia.status)}</span>
               </div>
@@ -1601,6 +1634,16 @@ function ListaIndicador({
 function textoUltimaVisita(data: string) {
   if (!data) return 'Sem visita registrada'
   return `Ultima visita: ${formatarData(data)} (${diasDesde(data)} dias)`
+}
+
+function textoPrazoVisita(data: string) {
+  if (!data) return `Primeira visita pendente. Ciclo padrao: ${PRAZO_VISITA_DIAS} dias.`
+  const dias = diasDesde(data)
+  const proxima = adicionarDias(data, PRAZO_VISITA_DIAS)
+  const saldo = PRAZO_VISITA_DIAS - dias
+  if (saldo > 0) return `Proxima visita ate ${formatarData(proxima)} (${saldo} dias restantes)`
+  if (saldo === 0) return `Visita vence hoje (${formatarData(proxima)})`
+  return `Visita atrasada ha ${Math.abs(saldo)} dias. Passar novamente.`
 }
 
 function pendenciaMorador(morador: Partial<Morador> & { idoso?: boolean; crianca?: boolean; statusFamilia?: StatusVisita }) {

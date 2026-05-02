@@ -650,6 +650,23 @@ textarea:focus {
   color: var(--muted);
 }
 
+.family-body .deadline-text {
+  margin-top: -4px;
+  font-weight: 800;
+}
+
+.deadline-text.em_dia {
+  color: var(--green-800);
+}
+
+.deadline-text.pendente {
+  color: var(--amber-700);
+}
+
+.deadline-text.atrasada {
+  color: var(--red-600);
+}
+
 .status-pill {
   border-radius: 999px;
   padding: 7px 10px;
