@@ -5,6 +5,7 @@ import {
   Baby,
   CalendarCheck,
   ClipboardList,
+  Database,
   Download,
   Edit3,
   FileSpreadsheet,
@@ -14,6 +15,8 @@ import {
   MapPinned,
   Menu,
   Pill,
+  RotateCcw,
+  Save,
   Search,
   Settings,
   ShieldCheck,
@@ -42,6 +45,7 @@ type Tela =
   | 'relatorios'
   | 'configuracoes'
 type ModoAuth = 'entrar' | 'cadastro' | 'recuperar'
+type TipoRelatorio = 'indicadores' | 'familias' | 'visitas' | 'vacinas'
 
 type EntityId = string | number
 
@@ -124,6 +128,13 @@ type ConfiguracoesApp = {
   microarea: string
   diasParaVisitaAtrasada: number
   backupAutomatico: boolean
+}
+
+type RelatorioDados = {
+  titulo: string
+  subtitulo: string
+  colunas: string[]
+  linhas: (string | number)[][]
 }
 
 const hoje = new Date()
@@ -366,6 +377,21 @@ const menus = [
   { id: 'configuracoes' as Tela, label: 'Configuracoes', icon: Settings },
 ]
 
+const gruposIndicadores = [
+  'Bolsa Familia',
+  'Hipertensos',
+  'Diabeticos',
+  'Hipertensos e diabeticos',
+  'Idosos acima de 60 anos',
+  'Gestantes',
+  'Criancas de 0 a 2 anos',
+  'Pessoas com remedio controlado',
+  'Vacinas pendentes',
+  'Pre-natal pendente',
+  'Visitas atrasadas',
+  'Visitas pendentes',
+]
+
 function calcularIdade(nascimento: string) {
   const data = new Date(`${nascimento}T00:00:00`)
   let idade = hoje.getFullYear() - data.getFullYear()
@@ -391,6 +417,7 @@ function saldoDiasVisita(data: string, prazoDias = PRAZO_VISITA_DIAS) {
 }
 
 function formatarData(data: string) {
+  if (!data) return '-'
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(`${data}T00:00:00`))
 }
 
@@ -445,6 +472,15 @@ function normalizarNumeroDecimal(valor: string) {
   if (!limpo) return ''
   const numero = Number(limpo)
   return Number.isFinite(numero) ? String(numero) : ''
+}
+
+function baixarArquivo(nome: string, conteudo: BlobPart, tipo: string) {
+  const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = nome
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 function usePersistentState<T>(key: string, initialValue: T) {
@@ -592,6 +628,15 @@ function App() {
   const [vacinas, setVacinas] = usePersistentState('acs:vacinas', vacinasIniciais)
   const [configuracoes, setConfiguracoes] = usePersistentState('acs:configuracoes', configuracoesIniciais)
   const [configuracoesSalvas, setConfiguracoesSalvas] = useState('')
+  const [mensagemConfiguracoes, setMensagemConfiguracoes] = useState('')
+  const [novaSenha, setNovaSenha] = useState('')
+  const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [tipoRelatorio, setTipoRelatorio] = useState<TipoRelatorio>('indicadores')
+  const [grupoRelatorio, setGrupoRelatorio] = useState('Vacinas pendentes')
+  const [relatorioInicio, setRelatorioInicio] = useState('')
+  const [relatorioFim, setRelatorioFim] = useState('')
+  const [relatorioLogradouro, setRelatorioLogradouro] = useState('')
+  const [relatorioStatus, setRelatorioStatus] = useState('')
   const [grupoAtivo, setGrupoAtivo] = useState('Vacinas pendentes')
   const [logradouroEditando, setLogradouroEditando] = useState<Logradouro | null>(null)
   const [familiaEditando, setFamiliaEditando] = useState<Familia | null>(null)
@@ -911,6 +956,127 @@ function App() {
     }
     return moradoresDetalhados.filter(filtros[grupoAtivo])
   }, [grupoAtivo, moradoresDetalhados])
+
+  const familiasRelatorio = useMemo(() => (
+    familiasComEndereco.filter((familia) => {
+      const logradouroOk = !relatorioLogradouro || String(familia.logradouroId) === String(relatorioLogradouro)
+      const statusOk = !relatorioStatus || familia.status === relatorioStatus
+      return logradouroOk && statusOk
+    })
+  ), [familiasComEndereco, relatorioLogradouro, relatorioStatus])
+
+  const moradoresRelatorio = useMemo(() => {
+    const filtros: Record<string, (item: (typeof moradoresDetalhados)[number]) => boolean> = {
+      'Bolsa Familia': (item) => item.bolsaFamilia,
+      Hipertensos: (item) => item.hipertenso,
+      Diabeticos: (item) => item.diabetico,
+      'Hipertensos e diabeticos': (item) => item.hipertenso && item.diabetico,
+      'Idosos acima de 60 anos': (item) => item.idoso,
+      Gestantes: (item) => item.gestante,
+      'Criancas de 0 a 2 anos': (item) => item.crianca,
+      'Pessoas com remedio controlado': (item) => item.remedioControlado,
+      'Vacinas pendentes': (item) => item.vacinaPendente,
+      'Pre-natal pendente': (item) => item.gestante && !item.preNatalEmDia,
+      'Visitas atrasadas': (item) => item.statusFamilia === 'atrasada',
+      'Visitas pendentes': (item) => item.statusFamilia === 'pendente',
+    }
+    return moradoresDetalhados.filter((morador) => {
+      const familia = familiasComEndereco.find((item) => String(item.id) === String(morador.familiaId))
+      const logradouroOk = !relatorioLogradouro || String(familia?.logradouroId) === String(relatorioLogradouro)
+      return logradouroOk && filtros[grupoRelatorio](morador)
+    })
+  }, [familiasComEndereco, grupoRelatorio, moradoresDetalhados, relatorioLogradouro])
+
+  const visitasRelatorio = useMemo(() => (
+    visitasDetalhadas.filter((visita) => {
+      const familia = familiasComEndereco.find((item) => String(item.id) === String(visita.familiaId))
+      const logradouroOk = !relatorioLogradouro || String(familia?.logradouroId) === String(relatorioLogradouro)
+      const inicioOk = !relatorioInicio || visita.data >= relatorioInicio
+      const fimOk = !relatorioFim || visita.data <= relatorioFim
+      const statusOk = !relatorioStatus || visita.status === relatorioStatus
+      return logradouroOk && inicioOk && fimOk && statusOk
+    })
+  ), [familiasComEndereco, relatorioFim, relatorioInicio, relatorioLogradouro, relatorioStatus, visitasDetalhadas])
+
+  const vacinasRelatorio = useMemo(() => (
+    vacinas
+      .map((vacina) => {
+        const morador = moradoresDetalhados.find((item) => String(item.id) === String(vacina.moradorId))
+        const familia = familiasComEndereco.find((item) => morador && String(item.id) === String(morador.familiaId))
+        return { ...vacina, morador, familia }
+      })
+      .filter((vacina) => {
+        const logradouroOk = !relatorioLogradouro || String(vacina.familia?.logradouroId) === String(relatorioLogradouro)
+        const inicioOk = !relatorioInicio || (vacina.dataPrevista || vacina.dataAplicacao) >= relatorioInicio
+        const fimOk = !relatorioFim || (vacina.dataPrevista || vacina.dataAplicacao) <= relatorioFim
+        const statusOk = !relatorioStatus || vacina.status === relatorioStatus
+        return logradouroOk && inicioOk && fimOk && statusOk
+      })
+  ), [familiasComEndereco, moradoresDetalhados, relatorioFim, relatorioInicio, relatorioLogradouro, relatorioStatus, vacinas])
+
+  const relatorioDados = useMemo<RelatorioDados>(() => {
+    if (tipoRelatorio === 'familias') {
+      return {
+        titulo: 'Relatorio de familias e domicilios',
+        subtitulo: `${familiasRelatorio.length} familia(s) filtrada(s)`,
+        colunas: ['Familia', 'Endereco', 'Responsavel', 'Moradores', 'Ultima visita', 'Status'],
+        linhas: familiasRelatorio.map((familia) => [
+          familia.nome,
+          familia.endereco,
+          familia.responsavel,
+          familia.quantidadeMoradores,
+          formatarData(familia.ultimaVisita),
+          statusTexto(familia.status),
+        ]),
+      }
+    }
+
+    if (tipoRelatorio === 'visitas') {
+      return {
+        titulo: 'Relatorio de visitas domiciliares',
+        subtitulo: `${visitasRelatorio.length} visita(s) filtrada(s)`,
+        colunas: ['Data', 'Familia', 'Endereco', 'ACS', 'Status', 'Proxima visita'],
+        linhas: visitasRelatorio.map((visita) => [
+          formatarData(visita.data),
+          visita.familia,
+          visita.endereco,
+          visita.acs || '-',
+          statusTexto(visita.status),
+          formatarData(visita.proximaVisita),
+        ]),
+      }
+    }
+
+    if (tipoRelatorio === 'vacinas') {
+      return {
+        titulo: 'Relatorio de vacinas',
+        subtitulo: `${vacinasRelatorio.length} registro(s) vacinal(is)`,
+        colunas: ['Morador', 'Familia', 'Vacina', 'Dose', 'Prevista', 'Status'],
+        linhas: vacinasRelatorio.map((vacina) => [
+          vacina.morador?.nome ?? 'Morador nao encontrado',
+          vacina.morador?.familia ?? '-',
+          vacina.nome,
+          vacina.dose,
+          formatarData(vacina.dataPrevista),
+          statusTexto(vacina.status),
+        ]),
+      }
+    }
+
+    return {
+      titulo: `Relatorio de indicadores - ${grupoRelatorio}`,
+      subtitulo: `${moradoresRelatorio.length} morador(es) no grupo`,
+      colunas: ['Nome', 'CPF', 'Idade', 'Familia', 'Endereco', 'Pendencia'],
+      linhas: moradoresRelatorio.map((morador) => [
+        morador.nome,
+        morador.cpf || '-',
+        morador.idade,
+        morador.familia,
+        morador.endereco,
+        pendenciaMorador(morador),
+      ]),
+    }
+  }, [familiasRelatorio, grupoRelatorio, moradoresRelatorio, tipoRelatorio, vacinasRelatorio, visitasRelatorio])
 
   async function entrar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -1469,6 +1635,67 @@ function App() {
     window.setTimeout(() => setConfiguracoesSalvas(''), 2600)
   }
 
+  async function alterarSenha(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setMensagemConfiguracoes('')
+
+    if (!supabase) {
+      setMensagemConfiguracoes('A troca de senha exige Supabase conectado.')
+      return
+    }
+
+    if (novaSenha.length < 6) {
+      setMensagemConfiguracoes('A nova senha precisa ter pelo menos 6 caracteres.')
+      return
+    }
+
+    if (novaSenha !== confirmarSenha) {
+      setMensagemConfiguracoes('A confirmacao da senha nao confere.')
+      return
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: novaSenha })
+    if (error) {
+      setMensagemConfiguracoes(error.message)
+      return
+    }
+
+    setNovaSenha('')
+    setConfirmarSenha('')
+    setMensagemConfiguracoes('Senha atualizada com sucesso.')
+  }
+
+  function exportarBackup() {
+    const backup = {
+      geradoEm: new Date().toISOString(),
+      configuracoes,
+      logradouros,
+      familias,
+      moradores,
+      visitas,
+      vacinas,
+    }
+    baixarArquivo(
+      `acs-backup-${isoHoje}.json`,
+      JSON.stringify(backup, null, 2),
+      'application/json;charset=utf-8',
+    )
+    setMensagemConfiguracoes('Backup JSON gerado.')
+  }
+
+  function limparDadosLocais() {
+    const confirmar = window.confirm('Limpar os dados locais de demonstracao deste navegador? Dados salvos no Supabase nao serao apagados.')
+    if (!confirmar) return
+    ;['acs:logradouros', 'acs:familias', 'acs:moradores', 'acs:visitas', 'acs:vacinas', 'acs:configuracoes'].forEach((key) => localStorage.removeItem(key))
+    setLogradouros(logradourosIniciais)
+    setFamilias(familiasIniciais)
+    setMoradores(moradoresIniciais)
+    setVisitas(visitasIniciais)
+    setVacinas(vacinasIniciais)
+    setConfiguracoes(configuracoesIniciais)
+    setMensagemConfiguracoes('Dados locais restaurados para demonstracao.')
+  }
+
   async function sair() {
     if (supabase) await supabase.auth.signOut()
     setUsuarioId('')
@@ -1476,57 +1703,98 @@ function App() {
   }
 
   function exportarPDF() {
-    const doc = new jsPDF()
-    doc.text('ACS Controle Saude - Relatorio de indicadores', 14, 16)
-    autoTable(doc, {
-      head: [['Nome', 'CPF', 'Idade', 'Familia', 'Endereco', 'Pendencia']],
-      body: listaGrupo.map((item) => [item.nome, item.cpf, item.idade, item.familia, item.endereco, pendenciaMorador(item)]),
-      startY: 24,
+    const doc = new jsPDF({ orientation: 'landscape' })
+    const largura = doc.internal.pageSize.getWidth()
+    const altura = doc.internal.pageSize.getHeight()
+    const totalPendencias = moradoresDetalhados.filter((morador) => pendenciaMorador(morador) !== 'Em dia').length
+
+    doc.setFillColor(13, 63, 37)
+    doc.rect(0, 0, largura, 34, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(17)
+    doc.text(relatorioDados.titulo, 14, 15)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.text(`${configuracoes.unidadeSaude} - ${configuracoes.microarea}`, 14, 23)
+    doc.text(`Emitido em ${formatarData(isoHoje)}`, largura - 14, 23, { align: 'right' })
+
+    const cards = [
+      ['Familias', familias.length],
+      ['Moradores', moradores.length],
+      ['Visitas', visitas.length],
+      ['Pendencias', totalPendencias],
+    ]
+    cards.forEach(([label, valor], index) => {
+      const x = 14 + index * 48
+      doc.setFillColor(237, 248, 241)
+      doc.roundedRect(x, 43, 40, 18, 3, 3, 'F')
+      doc.setTextColor(13, 63, 37)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(12)
+      doc.text(String(valor), x + 5, 51)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7)
+      doc.text(String(label), x + 5, 57)
     })
-    doc.save('acs-controle-saude-relatorio.pdf')
+
+    doc.setTextColor(104, 117, 109)
+    doc.setFontSize(9)
+    doc.text(relatorioDados.subtitulo, 14, 70)
+
+    autoTable(doc, {
+      head: [relatorioDados.colunas],
+      body: relatorioDados.linhas,
+      startY: 76,
+      theme: 'grid',
+      margin: { left: 14, right: 14, bottom: 16 },
+      headStyles: {
+        fillColor: [31, 122, 67],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        halign: 'left',
+      },
+      alternateRowStyles: { fillColor: [247, 252, 249] },
+      styles: {
+        font: 'helvetica',
+        fontSize: 8,
+        cellPadding: 3,
+        textColor: [24, 35, 29],
+        lineColor: [226, 232, 228],
+      },
+      didDrawPage: () => {
+        doc.setFontSize(8)
+        doc.setTextColor(104, 117, 109)
+        doc.text('ACS Controle Saude', 14, altura - 8)
+        doc.text(`Pagina ${doc.getNumberOfPages()}`, largura - 14, altura - 8, { align: 'right' })
+      },
+    })
+    doc.save(`acs-${tipoRelatorio}-${isoHoje}.pdf`)
   }
 
   function exportarExcel() {
-    const linhas = listaGrupo
+    const linhas = relatorioDados.linhas
       .map(
-        (item) => `
+        (linha) => `
           <tr>
-            <td>${escaparCelula(item.nome)}</td>
-            <td>${escaparCelula(item.cpf)}</td>
-            <td>${escaparCelula(item.idade)}</td>
-            <td>${escaparCelula(item.familia)}</td>
-            <td>${escaparCelula(item.endereco)}</td>
-            <td>${escaparCelula(item.ultimaVisita)}</td>
-            <td>${escaparCelula(pendenciaMorador(item))}</td>
+            ${linha.map((celula) => `<td>${escaparCelula(celula)}</td>`).join('')}
           </tr>`,
       )
       .join('')
+    const cabecalho = relatorioDados.colunas.map((coluna) => `<th>${escaparCelula(coluna)}</th>`).join('')
     const tabela = `
       <html>
         <head><meta charset="UTF-8" /></head>
         <body>
+          <h1>${escaparCelula(relatorioDados.titulo)}</h1>
+          <p>${escaparCelula(configuracoes.unidadeSaude)} - ${escaparCelula(configuracoes.microarea)}</p>
           <table>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>CPF</th>
-                <th>Idade</th>
-                <th>Familia</th>
-                <th>Endereco</th>
-                <th>Ultima visita</th>
-                <th>Pendencia</th>
-              </tr>
-            </thead>
+            <thead><tr>${cabecalho}</tr></thead>
             <tbody>${linhas}</tbody>
           </table>
         </body>
       </html>`
-    const url = URL.createObjectURL(new Blob([tabela], { type: 'application/vnd.ms-excel;charset=utf-8' }))
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'acs-controle-saude-relatorio.xls'
-    link.click()
-    URL.revokeObjectURL(url)
+    baixarArquivo(`acs-${tipoRelatorio}-${isoHoje}.xls`, tabela, 'application/vnd.ms-excel;charset=utf-8')
   }
 
   if (carregando && !logado) {
@@ -2019,20 +2287,7 @@ function App() {
         {tela === 'indicadores' && (
           <section className="screen animate-in">
             <div className="indicator-tabs">
-              {[
-                'Bolsa Familia',
-                'Hipertensos',
-                'Diabeticos',
-                'Hipertensos e diabeticos',
-                'Idosos acima de 60 anos',
-                'Gestantes',
-                'Criancas de 0 a 2 anos',
-                'Pessoas com remedio controlado',
-                'Vacinas pendentes',
-                'Pre-natal pendente',
-                'Visitas atrasadas',
-                'Visitas pendentes',
-              ].map((grupo) => (
+              {gruposIndicadores.map((grupo) => (
                 <button key={grupo} className={grupoAtivo === grupo ? 'selected' : ''} onClick={() => setGrupoAtivo(grupo)}>
                   {grupo}
                 </button>
@@ -2044,11 +2299,135 @@ function App() {
 
         {tela === 'relatorios' && (
           <section className="screen animate-in">
-            <div className="action-row">
-              <button className="secondary-button" onClick={exportarPDF}><Download size={17} /> PDF</button>
-              <button className="secondary-button" onClick={exportarExcel}><FileSpreadsheet size={17} /> Excel</button>
+            <div className="report-layout">
+              <section className="panel report-controls">
+                <div className="panel-title-row">
+                  <h2>Gerar relatorio</h2>
+                  <span>{relatorioDados.linhas.length}</span>
+                </div>
+                <div className="form-grid">
+                  <label>
+                    Tipo
+                    <select value={tipoRelatorio} onChange={(event) => setTipoRelatorio(event.target.value as TipoRelatorio)}>
+                      <option value="indicadores">Indicadores por grupo</option>
+                      <option value="familias">Familias e domicilios</option>
+                      <option value="visitas">Visitas domiciliares</option>
+                      <option value="vacinas">Vacinas</option>
+                    </select>
+                  </label>
+                  {tipoRelatorio === 'indicadores' && (
+                    <label>
+                      Grupo
+                      <select value={grupoRelatorio} onChange={(event) => setGrupoRelatorio(event.target.value)}>
+                        {gruposIndicadores.map((grupo) => (
+                          <option key={grupo}>{grupo}</option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  <label>
+                    Logradouro
+                    <select value={relatorioLogradouro} onChange={(event) => setRelatorioLogradouro(event.target.value)}>
+                      <option value="">Todos</option>
+                      {logradouros.map((logradouro) => (
+                        <option key={logradouro.id} value={logradouro.id}>{logradouro.tipo} {logradouro.nome}</option>
+                      ))}
+                    </select>
+                  </label>
+                  {(tipoRelatorio === 'visitas' || tipoRelatorio === 'vacinas') && (
+                    <>
+                      <label>
+                        Inicio
+                        <input type="date" value={relatorioInicio} onChange={(event) => setRelatorioInicio(event.target.value)} />
+                      </label>
+                      <label>
+                        Fim
+                        <input type="date" value={relatorioFim} onChange={(event) => setRelatorioFim(event.target.value)} />
+                      </label>
+                    </>
+                  )}
+                  {tipoRelatorio !== 'indicadores' && (
+                    <label>
+                      Status
+                      <select value={relatorioStatus} onChange={(event) => setRelatorioStatus(event.target.value)}>
+                        <option value="">Todos</option>
+                        {tipoRelatorio === 'familias' && (
+                          <>
+                            <option value="em_dia">Em dia</option>
+                            <option value="pendente">Pendente</option>
+                            <option value="atrasada">Atrasada</option>
+                          </>
+                        )}
+                        {tipoRelatorio === 'visitas' && (
+                          <>
+                            <option value="concluida">Concluida</option>
+                            <option value="pendente">Pendente</option>
+                            <option value="retorno_necessario">Retorno necessario</option>
+                          </>
+                        )}
+                        {tipoRelatorio === 'vacinas' && (
+                          <>
+                            <option value="aplicada">Aplicada</option>
+                            <option value="pendente">Pendente</option>
+                            <option value="atrasada">Atrasada</option>
+                          </>
+                        )}
+                      </select>
+                    </label>
+                  )}
+                </div>
+                <div className="action-row">
+                  <button className="secondary-button" onClick={exportarPDF}><Download size={17} /> PDF bonito</button>
+                  <button className="secondary-button" onClick={exportarExcel}><FileSpreadsheet size={17} /> Excel</button>
+                </div>
+              </section>
+
+              <section className="report-summary">
+                {[
+                  { label: 'Familias', valor: familias.length, icon: Home },
+                  { label: 'Moradores', valor: moradores.length, icon: UsersRound },
+                  { label: 'Visitas', valor: visitas.length, icon: CalendarCheck },
+                  { label: 'No relatorio', valor: relatorioDados.linhas.length, icon: ClipboardList },
+                ].map(({ label, valor, icon: SummaryIcon }) => {
+                  return (
+                    <article key={label} className="summary-card">
+                      <SummaryIcon size={19} />
+                      <strong>{valor}</strong>
+                      <span>{label}</span>
+                    </article>
+                  )
+                })}
+              </section>
+
+              <section className="panel report-preview">
+                <div className="panel-title-row">
+                  <h2>{relatorioDados.titulo}</h2>
+                  <span>{relatorioDados.linhas.length}</span>
+                </div>
+                <p className="muted">{relatorioDados.subtitulo}</p>
+                <div className="report-table-wrap">
+                  <table className="report-table">
+                    <thead>
+                      <tr>
+                        {relatorioDados.colunas.map((coluna) => <th key={coluna}>{coluna}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {relatorioDados.linhas.length === 0 && (
+                        <tr>
+                          <td colSpan={relatorioDados.colunas.length}>Nenhum registro encontrado.</td>
+                        </tr>
+                      )}
+                      {relatorioDados.linhas.slice(0, 80).map((linha, index) => (
+                        <tr key={`${linha.join('-')}-${index}`}>
+                          {linha.map((celula, celulaIndex) => <td key={`${celula}-${celulaIndex}`}>{celula}</td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
             </div>
-            <ListaIndicador moradores={listaGrupo} />
           </section>
         )}
 
@@ -2073,7 +2452,7 @@ function App() {
                   <span>Marcar backup automatico como ativo</span>
                 </label>
                 {configuracoesSalvas && <p className="form-success">{configuracoesSalvas}</p>}
-                <button className="primary-button">Salvar</button>
+                <button className="primary-button"><Save size={17} /> Salvar configuracoes</button>
               </form>
             </CrudCard>
             <CrudCard title="Ambiente">
@@ -2090,7 +2469,32 @@ function App() {
                   <strong>Ciclo de visita</strong>
                   <span>{configuracoes.diasParaVisitaAtrasada} dias</span>
                 </p>
+                <p>
+                  <strong>Registros locais</strong>
+                  <span>{logradouros.length} logradouros, {familias.length} familias, {moradores.length} moradores, {visitas.length} visitas</span>
+                </p>
               </div>
+            </CrudCard>
+            <CrudCard title="Seguranca">
+              <form className="form-grid" onSubmit={alterarSenha}>
+                <label>
+                  Nova senha
+                  <input type="password" value={novaSenha} onChange={(event) => setNovaSenha(event.target.value)} minLength={6} placeholder="Minimo 6 caracteres" />
+                </label>
+                <label>
+                  Confirmar senha
+                  <input type="password" value={confirmarSenha} onChange={(event) => setConfirmarSenha(event.target.value)} minLength={6} placeholder="Repita a nova senha" />
+                </label>
+                <button className="primary-button"><ShieldCheck size={17} /> Atualizar senha</button>
+              </form>
+            </CrudCard>
+            <CrudCard title="Backup e manutencao">
+              <div className="settings-actions">
+                <button className="secondary-button" type="button" onClick={exportarBackup}><Database size={17} /> Baixar backup JSON</button>
+                <button className="secondary-button danger-soft" type="button" onClick={limparDadosLocais}><RotateCcw size={17} /> Restaurar demo local</button>
+              </div>
+              <p className="muted">O backup JSON baixa uma copia dos dados carregados neste navegador. A restauracao local nao apaga dados do Supabase.</p>
+              {mensagemConfiguracoes && <p className="form-success">{mensagemConfiguracoes}</p>}
             </CrudCard>
           </section>
         )}
