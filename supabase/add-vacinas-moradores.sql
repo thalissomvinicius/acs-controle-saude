@@ -6,6 +6,14 @@ alter table public.familias
 add constraint familias_tipo_imovel_check
 check (tipo_imovel in ('Casa', 'Apartamento', 'Comercio', 'Outro'));
 
+create or replace function public.set_atualizado_em()
+returns trigger as $$
+begin
+  new.atualizado_em = now();
+  return new;
+end;
+$$ language plpgsql;
+
 create table if not exists public.vacinas_moradores (
   id uuid primary key default gen_random_uuid(),
   usuario_id uuid not null references public.usuarios(id) on delete cascade,
