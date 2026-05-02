@@ -2108,6 +2108,20 @@ function App() {
                 ))}
               </div>
             </CrudCard>
+                      </div>
+                      <div className="card-actions">
+                        <button className="icon-action" type="button" onClick={() => setLogradouroEditando(item)} aria-label="Editar logradouro">
+                          <Edit3 size={17} />
+                        </button>
+                        <button className="icon-action danger" type="button" onClick={() => excluirLogradouro(item.id)} aria-label="Excluir logradouro">
+                          <Trash2 size={17} />
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </CrudCard>
           </section>
         )}
 
@@ -2117,7 +2131,8 @@ function App() {
               <form className="form-grid" onSubmit={adicionarFamilia} key={familiaEditando?.id ?? 'nova-familia'}>
                 <label>
                   Logradouro
-                  <select name="logradouroId" defaultValue={familiaEditando?.logradouroId ?? undefined} required>
+                  <select name="logradouroId" defaultValue={familiaEditando?.logradouroId ?? ''} required>
+                    <option value="" disabled>Selecione um logradouro</option>
                     {logradouros.map((item) => (
                       <option key={item.id} value={item.id}>{item.nome}</option>
                     ))}
@@ -2213,9 +2228,9 @@ function App() {
                 <label>
                   Sexo
                   <select name="sexo" defaultValue={moradorEditando?.sexo ?? 'Feminino'}>
-                    <option>Feminino</option>
-                    <option>Masculino</option>
-                    <option>Outro</option>
+                    <option value="Feminino">Feminino</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Outro">Outro</option>
                   </select>
                 </label>
                 <label>
@@ -2232,7 +2247,8 @@ function App() {
                 </label>
                 <label>
                   Família/domicílio vinculado
-                  <select name="familiaId" defaultValue={moradorEditando?.familiaId ?? undefined} required>
+                  <select name="familiaId" defaultValue={moradorEditando?.familiaId ?? ''} required>
+                    <option value="" disabled>Selecione uma família</option>
                     {familias.map((item) => (
                       <option key={item.id} value={item.id}>{item.nome}</option>
                     ))}
@@ -2291,6 +2307,7 @@ function App() {
                 <label>
                   Família visitada
                   <select name="familiaId" defaultValue={visitaEditando?.familiaId ?? ''} required>
+                    <option value="" disabled>Selecione uma família</option>
                     {familias.map((item) => (
                       <option key={item.id} value={item.id}>{item.nome}</option>
                     ))}
