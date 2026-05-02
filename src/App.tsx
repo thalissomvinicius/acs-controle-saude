@@ -1923,7 +1923,7 @@ function App() {
             {modoAuth !== 'recuperar' && (
               <label>
                 Senha
-                <input name="senha" type="password" autoComplete={modoAuth === 'cadastro' ? 'new-password' : 'current-password'} placeholder="********" minLength={6} required />
+                <input name="senha" type="password" autoComplete="current-password" placeholder="********" minLength={6} required />
               </label>
             )}
             {erroLogin && <p className="form-error">{erroLogin}</p>}
