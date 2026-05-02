@@ -2108,20 +2108,6 @@ function App() {
                 ))}
               </div>
             </CrudCard>
-                      </div>
-                      <div className="card-actions">
-                        <button className="icon-action" type="button" onClick={() => setLogradouroEditando(item)} aria-label="Editar logradouro">
-                          <Edit3 size={17} />
-                        </button>
-                        <button className="icon-action danger" type="button" onClick={() => excluirLogradouro(item.id)} aria-label="Excluir logradouro">
-                          <Trash2 size={17} />
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </CrudCard>
           </section>
         )}
 
