@@ -142,16 +142,16 @@ const isoHoje = hoje.toISOString().slice(0, 10)
 const PRAZO_VISITA_DIAS = 30
 const configuracoesIniciais: ConfiguracoesApp = {
   unidadeSaude: 'Posto da Feira',
-  microarea: 'Microarea principal',
+  microarea: 'Microárea principal',
   diasParaVisitaAtrasada: PRAZO_VISITA_DIAS,
   backupAutomatico: false,
 }
 const loginDemoPermitido = !import.meta.env.PROD && !supabaseConfigurado
 
 const logradourosIniciais: Logradouro[] = [
-  { id: 1, bairro: 'Tucano', nome: 'Nove de Junho', tipo: 'Rua', quantidadeImoveis: 16, observacoes: 'Area central da microarea.' },
-  { id: 2, bairro: 'Tucano', nome: 'Travessa 04', tipo: 'Travessa', quantidadeImoveis: 20, observacoes: 'Muitas familias com idosos.' },
-  { id: 3, bairro: 'Posto da Feira', nome: 'do Hospital', tipo: 'Rua', quantidadeImoveis: 8, observacoes: 'Proximo a UBS.' },
+  { id: 1, bairro: 'Tucano', nome: 'Nove de Junho', tipo: 'Rua', quantidadeImoveis: 16, observacoes: 'Área central da microárea.' },
+  { id: 2, bairro: 'Tucano', nome: 'Travessa 04', tipo: 'Travessa', quantidadeImoveis: 20, observacoes: 'Muitas famílias com idosos.' },
+  { id: 3, bairro: 'Posto da Feira', nome: 'do Hospital', tipo: 'Rua', quantidadeImoveis: 8, observacoes: 'Próximo à UBS.' },
 ]
 
 const familiasIniciais: Familia[] = [
@@ -160,12 +160,12 @@ const familiasIniciais: Familia[] = [
     logradouroId: 1,
     numero: '01',
     tipoImovel: 'Casa',
-    nome: 'Familia Silva',
+    nome: 'Família Silva',
     responsavel: 'Eder Belem da Silva',
     telefone: '(92) 98888-0001',
     quantidadeMoradores: 4,
-    situacaoMoradia: 'Propria',
-    observacoes: 'Acompanhar hipertensao e vacina infantil.',
+    situacaoMoradia: 'Própria',
+    observacoes: 'Acompanhar hipertensão e vacina infantil.',
     ultimaVisita: '2026-04-14',
     status: 'pendente',
   },
@@ -174,7 +174,7 @@ const familiasIniciais: Familia[] = [
     logradouroId: 2,
     numero: '04',
     tipoImovel: 'Casa',
-    nome: 'Familia Dalmasso',
+    nome: 'Família Dalmasso',
     responsavel: 'Maria da Penha Salomon Dalmasso',
     telefone: '(92) 98888-0002',
     quantidadeMoradores: 3,
@@ -188,12 +188,12 @@ const familiasIniciais: Familia[] = [
     logradouroId: 3,
     numero: '06',
     tipoImovel: 'Casa',
-    nome: 'Familia Freitas',
+    nome: 'Família Freitas',
     responsavel: 'Francisca do Nascimento Freitas',
     telefone: '(92) 98888-0003',
     quantidadeMoradores: 5,
     situacaoMoradia: 'Cedida',
-    observacoes: 'Bolsa Familia e remedio controlado.',
+    observacoes: 'Bolsa Família e remédio controlado.',
     ultimaVisita: '2026-04-23',
     status: 'em_dia',
   },
@@ -221,7 +221,7 @@ const moradoresIniciais: Morador[] = [
     remedioControlado: true,
     medicamento: 'Losartana',
     vacinaEmDia: true,
-    observacoes: 'Acompanhar pressao arterial.',
+    observacoes: 'Acompanhar pressão arterial.',
   },
   {
     id: 2,
@@ -267,7 +267,7 @@ const moradoresIniciais: Morador[] = [
     remedioControlado: false,
     medicamento: '',
     vacinaEmDia: true,
-    observacoes: 'Pre-natal pendente.',
+    observacoes: 'Pré-natal pendente.',
   },
   {
     id: 4,
@@ -290,7 +290,7 @@ const moradoresIniciais: Morador[] = [
     remedioControlado: true,
     medicamento: 'Metformina, Losartana',
     vacinaEmDia: false,
-    observacoes: 'Prioridade por hipertensao, diabetes e vacina.',
+    observacoes: 'Prioridade por hipertensão, diabetes e vacina.',
   },
 ]
 
@@ -299,13 +299,13 @@ const visitasIniciais: Visita[] = [
     id: 1,
     familiaId: 1,
     data: '2026-04-14',
-    acs: 'Adriellen Guimaraes',
+    acs: 'Adriellen Guimarães',
     pessoasEncontradas: 'Eder e Lia',
-    condicoes: 'Hipertensao, crianca 0 a 2 anos',
+    condicoes: 'Hipertensão, criança 0 a 2 anos',
     vacinaAtualizada: false,
     preNatalAtualizado: true,
     medicamentoConfirmado: true,
-    observacoes: 'Orientada atualizacao vacinal.',
+    observacoes: 'Orientada atualização vacinal.',
     proximaVisita: '2026-05-05',
     status: 'retorno_necessario',
   },
@@ -313,13 +313,13 @@ const visitasIniciais: Visita[] = [
     id: 2,
     familiaId: 2,
     data: '2026-03-20',
-    acs: 'Adriellen Guimaraes',
+    acs: 'Adriellen Guimarães',
     pessoasEncontradas: 'Maria',
     condicoes: 'Gestante',
     vacinaAtualizada: true,
     preNatalAtualizado: false,
     medicamentoConfirmado: false,
-    observacoes: 'Agendar pre-natal.',
+    observacoes: 'Agendar pré-natal.',
     proximaVisita: '2026-04-03',
     status: 'pendente',
   },
@@ -330,7 +330,7 @@ const vacinasIniciais: VacinaRegistro[] = [
     id: 1,
     moradorId: 2,
     nome: 'Pentavalente',
-    dose: '2a dose',
+    dose: '2ª dose',
     dataAplicacao: '',
     dataPrevista: '2025-05-15',
     status: 'atrasada',
@@ -344,7 +344,7 @@ const vacinasIniciais: VacinaRegistro[] = [
     dataAplicacao: '',
     dataPrevista: '2026-04-01',
     status: 'pendente',
-    observacoes: 'Prioridade por idade e condicoes cronicas.',
+    observacoes: 'Prioridade por idade e condições crônicas.',
   },
 ]
 
@@ -353,11 +353,11 @@ const vacinasCatalogo = [
   'Hepatite B',
   'Pentavalente',
   'VIP',
-  'Rotavirus',
-  'Pneumococica',
-  'Meningococica C',
+  'Rotavírus',
+  'Pneumocócica',
+  'Meningocócica C',
   'Febre amarela',
-  'Triplice viral',
+  'Tríplice viral',
   'DTP',
   'Influenza',
   'COVID-19',
@@ -366,28 +366,28 @@ const vacinasCatalogo = [
 ]
 
 const menus = [
-  { id: 'dashboard' as Tela, label: 'Inicio', icon: Activity },
+  { id: 'dashboard' as Tela, label: 'Início', icon: Activity },
   { id: 'logradouros' as Tela, label: 'Logradouros', icon: MapPinned },
-  { id: 'familias' as Tela, label: 'Familias', icon: Home },
+  { id: 'familias' as Tela, label: 'Famílias', icon: Home },
   { id: 'moradores' as Tela, label: 'Moradores', icon: UsersRound },
   { id: 'visitas' as Tela, label: 'Visitas', icon: CalendarCheck },
   { id: 'vacinas' as Tela, label: 'Vacinas', icon: Syringe },
   { id: 'indicadores' as Tela, label: 'Indicadores', icon: HeartPulse },
-  { id: 'relatorios' as Tela, label: 'Relatorios', icon: ClipboardList },
-  { id: 'configuracoes' as Tela, label: 'Configuracoes', icon: Settings },
+  { id: 'relatorios' as Tela, label: 'Relatórios', icon: ClipboardList },
+  { id: 'configuracoes' as Tela, label: 'Configurações', icon: Settings },
 ]
 
 const gruposIndicadores = [
-  'Bolsa Familia',
+  'Bolsa Família',
   'Hipertensos',
-  'Diabeticos',
-  'Hipertensos e diabeticos',
+  'Diabéticos',
+  'Hipertensos e diabéticos',
   'Idosos acima de 60 anos',
   'Gestantes',
-  'Criancas de 0 a 2 anos',
-  'Pessoas com remedio controlado',
+  'Crianças de 0 a 2 anos',
+  'Pessoas com remédio controlado',
   'Vacinas pendentes',
-  'Pre-natal pendente',
+  'Pré-natal pendente',
   'Visitas atrasadas',
   'Visitas pendentes',
 ]
@@ -603,8 +603,8 @@ function statusTexto(status: StatusVisita | StatusRegistro | StatusVacina) {
     em_dia: 'Em dia',
     pendente: 'Pendente',
     atrasada: 'Atrasada',
-    concluida: 'Concluida',
-    retorno_necessario: 'Retorno necessario',
+    concluida: 'Concluída',
+    retorno_necessario: 'Retorno necessário',
     aplicada: 'Aplicada',
   }
   return mapa[status]
@@ -620,7 +620,7 @@ function App() {
   const [tela, setTela] = useState<Tela>('dashboard')
   const [menuAberto, setMenuAberto] = useState(false)
   const [busca, setBusca] = useState('')
-  const [filtroRapido, setFiltroRapido] = useState('Mes')
+  const [filtroRapido, setFiltroRapido] = useState('Mês')
   const [logradouros, setLogradouros] = usePersistentState('acs:logradouros', logradourosIniciais)
   const [familias, setFamilias] = usePersistentState('acs:familias', familiasIniciais)
   const [moradores, setMoradores] = usePersistentState('acs:moradores', moradoresIniciais)
@@ -730,7 +730,7 @@ function App() {
     }
 
     const { error } = await supabase.from('usuarios').upsert(perfil, { onConflict: 'id' })
-    if (error) console.warn('Nao foi possivel sincronizar perfil do usuario:', error.message)
+    if (error) console.warn('Não foi possível sincronizar perfil do usuário:', error.message)
   }, [configuracoes.microarea, configuracoes.unidadeSaude])
 
   const carregarDados = useCallback(async (userIdAtual: string) => {
@@ -772,7 +772,7 @@ function App() {
       .order('data_prevista', { ascending: true })
 
     if (vacinasDb.error) {
-      console.warn('Tabela de vacinas ainda nao disponivel no Supabase:', vacinasDb.error.message)
+      console.warn('Tabela de vacinas ainda não disponível no Supabase:', vacinasDb.error.message)
     } else {
       setVacinas((vacinasDb.data ?? []).map(mapVacina))
     }
@@ -782,7 +782,7 @@ function App() {
     if (!supabase) return ''
     const { data, error } = await supabase.auth.getUser()
     if (error || !data.user) {
-      throw new Error('Sessao expirada. Saia e entre novamente.')
+      throw new Error('Sessão expirada. Saia e entre novamente.')
     }
     if (data.user.id !== usuarioId) {
       setUsuarioId(data.user.id)
@@ -870,7 +870,7 @@ function App() {
           const familia = familiasComEndereco.find((item) => String(item.id) === String(visita.familiaId))
           return {
             ...visita,
-            familia: familia?.nome ?? 'Familia nao encontrada',
+            familia: familia?.nome ?? 'Família não encontrada',
             endereco: familia?.endereco ?? '',
           }
         })
@@ -881,21 +881,21 @@ function App() {
   const indicadores = useMemo(() => {
     const visitasMes = visitas.filter((visita) => visita.data.slice(0, 7) === isoHoje.slice(0, 7)).length
     return [
-      { label: 'Total de familias', valor: familias.length, icon: Home, status: 'neutro' },
+      { label: 'Total de famílias', valor: familias.length, icon: Home, status: 'neutro' },
       { label: 'Total de moradores', valor: moradores.length, icon: UsersRound, status: 'neutro' },
-      { label: 'Visitas no mes', valor: visitasMes, icon: CalendarCheck, status: 'ok' },
+      { label: 'Visitas no mês', valor: visitasMes, icon: CalendarCheck, status: 'ok' },
       { label: 'Visitas pendentes', valor: familiasComEndereco.filter((item) => item.status === 'pendente').length, icon: ClipboardList, status: 'atencao' },
       { label: 'Visitas atrasadas', valor: familiasComEndereco.filter((item) => item.status === 'atrasada').length, icon: AlertTriangle, status: 'risco' },
       { label: 'Gestantes', valor: moradores.filter((item) => item.gestante).length, icon: HeartPulse, status: 'atencao' },
-      { label: 'Criancas 0 a 2', valor: moradoresDetalhados.filter((item) => item.crianca).length, icon: Baby, status: 'atencao' },
+      { label: 'Crianças 0 a 2', valor: moradoresDetalhados.filter((item) => item.crianca).length, icon: Baby, status: 'atencao' },
       { label: 'Idosos 60+', valor: moradoresDetalhados.filter((item) => item.idoso).length, icon: UserRound, status: 'neutro' },
       { label: 'Hipertensos', valor: moradores.filter((item) => item.hipertenso).length, icon: Activity, status: 'atencao' },
-      { label: 'Diabeticos', valor: moradores.filter((item) => item.diabetico).length, icon: HeartPulse, status: 'atencao' },
-      { label: 'Hipertensos e diabeticos', valor: moradores.filter((item) => item.hipertenso && item.diabetico).length, icon: ShieldCheck, status: 'risco' },
-      { label: 'Bolsa Familia', valor: moradores.filter((item) => item.bolsaFamilia).length, icon: UsersRound, status: 'neutro' },
-      { label: 'Remedio controlado', valor: moradores.filter((item) => item.remedioControlado).length, icon: Pill, status: 'atencao' },
+      { label: 'Diabéticos', valor: moradores.filter((item) => item.diabetico).length, icon: HeartPulse, status: 'atencao' },
+      { label: 'Hipertensos e diabéticos', valor: moradores.filter((item) => item.hipertenso && item.diabetico).length, icon: ShieldCheck, status: 'risco' },
+      { label: 'Bolsa Família', valor: moradores.filter((item) => item.bolsaFamilia).length, icon: UsersRound, status: 'neutro' },
+      { label: 'Remédio controlado', valor: moradores.filter((item) => item.remedioControlado).length, icon: Pill, status: 'atencao' },
       { label: 'Vacinas pendentes', valor: moradoresDetalhados.filter((item) => item.vacinaPendente).length, icon: Syringe, status: 'risco' },
-      { label: 'Pre-natal pendente', valor: moradores.filter((item) => item.gestante && !item.preNatalEmDia).length, icon: Baby, status: 'risco' },
+      { label: 'Pré-natal pendente', valor: moradores.filter((item) => item.gestante && !item.preNatalEmDia).length, icon: Baby, status: 'risco' },
     ]
   }, [familias, familiasComEndereco, moradores, moradoresDetalhados, visitas])
 
@@ -923,7 +923,7 @@ function App() {
       const saldo = saldoDiasVisita(familia.ultimaVisita, prazoDias)
       if (filtroRapido === 'Hoje') return saldo <= 0
       if (filtroRapido === 'Semana') return saldo <= 7
-      if (filtroRapido === 'Pendencias') return familia.status !== 'em_dia'
+      if (filtroRapido === 'Pendências') return familia.status !== 'em_dia'
       if (filtroRapido === 'Prioridades') {
         const moradoresDaFamilia = moradoresDetalhados.filter((morador) => String(morador.familiaId) === String(familia.id))
         return familia.status === 'atrasada' || moradoresDaFamilia.some((morador) => morador.vacinaPendente || (morador.gestante && !morador.preNatalEmDia))
@@ -933,7 +933,7 @@ function App() {
   }, [configuracoes.diasParaVisitaAtrasada, familiasComEndereco, filtroRapido, moradoresDetalhados])
 
   const moradoresDashboard = useMemo(() => {
-    if (filtroRapido !== 'Pendencias' && filtroRapido !== 'Prioridades') return resultadosBusca.slice(0, 5)
+    if (filtroRapido !== 'Pendências' && filtroRapido !== 'Prioridades') return resultadosBusca.slice(0, 5)
     return resultadosBusca
       .filter((morador) => pendenciaMorador(morador) !== 'Em dia')
       .slice(0, 5)
@@ -941,16 +941,16 @@ function App() {
 
   const listaGrupo = useMemo(() => {
     const filtros: Record<string, (item: (typeof moradoresDetalhados)[number]) => boolean> = {
-      'Bolsa Familia': (item) => item.bolsaFamilia,
+      'Bolsa Família': (item) => item.bolsaFamilia,
       Hipertensos: (item) => item.hipertenso,
-      Diabeticos: (item) => item.diabetico,
-      'Hipertensos e diabeticos': (item) => item.hipertenso && item.diabetico,
+      Diabéticos: (item) => item.diabetico,
+      'Hipertensos e diabéticos': (item) => item.hipertenso && item.diabetico,
       'Idosos acima de 60 anos': (item) => item.idoso,
       Gestantes: (item) => item.gestante,
-      'Criancas de 0 a 2 anos': (item) => item.crianca,
-      'Pessoas com remedio controlado': (item) => item.remedioControlado,
+      'Crianças de 0 a 2 anos': (item) => item.crianca,
+      'Pessoas com remédio controlado': (item) => item.remedioControlado,
       'Vacinas pendentes': (item) => item.vacinaPendente,
-      'Pre-natal pendente': (item) => item.gestante && !item.preNatalEmDia,
+      'Pré-natal pendente': (item) => item.gestante && !item.preNatalEmDia,
       'Visitas atrasadas': (item) => item.statusFamilia === 'atrasada',
       'Visitas pendentes': (item) => item.statusFamilia === 'pendente',
     }
@@ -967,16 +967,16 @@ function App() {
 
   const moradoresRelatorio = useMemo(() => {
     const filtros: Record<string, (item: (typeof moradoresDetalhados)[number]) => boolean> = {
-      'Bolsa Familia': (item) => item.bolsaFamilia,
+      'Bolsa Família': (item) => item.bolsaFamilia,
       Hipertensos: (item) => item.hipertenso,
-      Diabeticos: (item) => item.diabetico,
-      'Hipertensos e diabeticos': (item) => item.hipertenso && item.diabetico,
+      Diabéticos: (item) => item.diabetico,
+      'Hipertensos e diabéticos': (item) => item.hipertenso && item.diabetico,
       'Idosos acima de 60 anos': (item) => item.idoso,
       Gestantes: (item) => item.gestante,
-      'Criancas de 0 a 2 anos': (item) => item.crianca,
-      'Pessoas com remedio controlado': (item) => item.remedioControlado,
+      'Crianças de 0 a 2 anos': (item) => item.crianca,
+      'Pessoas com remédio controlado': (item) => item.remedioControlado,
       'Vacinas pendentes': (item) => item.vacinaPendente,
-      'Pre-natal pendente': (item) => item.gestante && !item.preNatalEmDia,
+      'Pré-natal pendente': (item) => item.gestante && !item.preNatalEmDia,
       'Visitas atrasadas': (item) => item.statusFamilia === 'atrasada',
       'Visitas pendentes': (item) => item.statusFamilia === 'pendente',
     }
@@ -1017,9 +1017,9 @@ function App() {
   const relatorioDados = useMemo<RelatorioDados>(() => {
     if (tipoRelatorio === 'familias') {
       return {
-        titulo: 'Relatorio de familias e domicilios',
-        subtitulo: `${familiasRelatorio.length} familia(s) filtrada(s)`,
-        colunas: ['Familia', 'Endereco', 'Responsavel', 'Moradores', 'Ultima visita', 'Status'],
+        titulo: 'Relatório de famílias e domicílios',
+        subtitulo: `${familiasRelatorio.length} família(s) filtrada(s)`,
+        colunas: ['Família', 'Endereço', 'Responsável', 'Moradores', 'Última visita', 'Status'],
         linhas: familiasRelatorio.map((familia) => [
           familia.nome,
           familia.endereco,
@@ -1033,9 +1033,9 @@ function App() {
 
     if (tipoRelatorio === 'visitas') {
       return {
-        titulo: 'Relatorio de visitas domiciliares',
+        titulo: 'Relatório de visitas domiciliares',
         subtitulo: `${visitasRelatorio.length} visita(s) filtrada(s)`,
-        colunas: ['Data', 'Familia', 'Endereco', 'ACS', 'Status', 'Proxima visita'],
+        colunas: ['Data', 'Família', 'Endereço', 'ACS', 'Status', 'Próxima visita'],
         linhas: visitasRelatorio.map((visita) => [
           formatarData(visita.data),
           visita.familia,
@@ -1049,11 +1049,11 @@ function App() {
 
     if (tipoRelatorio === 'vacinas') {
       return {
-        titulo: 'Relatorio de vacinas',
+        titulo: 'Relatório de vacinas',
         subtitulo: `${vacinasRelatorio.length} registro(s) vacinal(is)`,
-        colunas: ['Morador', 'Familia', 'Vacina', 'Dose', 'Prevista', 'Status'],
+        colunas: ['Morador', 'Família', 'Vacina', 'Dose', 'Prevista', 'Status'],
         linhas: vacinasRelatorio.map((vacina) => [
-          vacina.morador?.nome ?? 'Morador nao encontrado',
+          vacina.morador?.nome ?? 'Morador não encontrado',
           vacina.morador?.familia ?? '-',
           vacina.nome,
           vacina.dose,
@@ -1064,9 +1064,9 @@ function App() {
     }
 
     return {
-      titulo: `Relatorio de indicadores - ${grupoRelatorio}`,
+      titulo: `Relatório de indicadores - ${grupoRelatorio}`,
       subtitulo: `${moradoresRelatorio.length} morador(es) no grupo`,
-      colunas: ['Nome', 'CPF', 'Idade', 'Familia', 'Endereco', 'Pendencia'],
+      colunas: ['Nome', 'CPF', 'Idade', 'Família', 'Endereço', 'Pendência'],
       linhas: moradoresRelatorio.map((morador) => [
         morador.nome,
         morador.cpf || '-',
@@ -1094,7 +1094,7 @@ function App() {
             redirectTo: window.location.origin,
           })
           if (error) throw error
-          setMensagemLogin('Enviamos as instrucoes de recuperacao para o e-mail informado.')
+          setMensagemLogin('Enviamos as instruções de recuperação para o e-mail informado.')
           return
         }
 
@@ -1112,7 +1112,7 @@ function App() {
             setModoAuth('entrar')
             return
           }
-          if (!data.user) throw new Error('Cadastro nao retornou usuario.')
+          if (!data.user) throw new Error('Cadastro não retornou usuário.')
           await garantirPerfil(data.user)
           setUsuarioId(data.user.id)
           setLogado(true)
@@ -1122,13 +1122,13 @@ function App() {
 
         const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
         if (error) throw error
-        if (!data.user) throw new Error('Login nao retornou usuario.')
+        if (!data.user) throw new Error('Login não retornou usuário.')
         await garantirPerfil(data.user)
         setUsuarioId(data.user.id)
         setLogado(true)
         await carregarDados(data.user.id)
       } catch (error) {
-        setErroLogin(error instanceof Error ? error.message : 'Nao foi possivel entrar.')
+        setErroLogin(error instanceof Error ? error.message : 'Não foi possível entrar.')
       } finally {
         setCarregando(false)
       }
@@ -1136,12 +1136,12 @@ function App() {
     }
 
     if (modoAuth !== 'entrar') {
-      setErroLogin('Cadastro e recuperacao de senha exigem Supabase configurado.')
+      setErroLogin('Cadastro e recuperação de senha exigem Supabase configurado.')
       return
     }
 
     if (!loginDemoPermitido) {
-      setErroLogin('Supabase nao configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para liberar o acesso.')
+      setErroLogin('Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para liberar o acesso.')
       return
     }
 
@@ -1201,7 +1201,7 @@ function App() {
   }
 
   async function excluirLogradouro(id: EntityId) {
-    const confirmar = window.confirm('Excluir este logradouro? Familias vinculadas podem impedir a exclusao.')
+    const confirmar = window.confirm('Excluir este logradouro? Famílias vinculadas podem impedir a exclusão.')
     if (!confirmar) return
 
     if (supabase) {
@@ -1284,7 +1284,7 @@ function App() {
   }
 
   async function excluirFamilia(id: EntityId) {
-    const confirmar = window.confirm('Excluir esta familia? Moradores e visitas vinculados podem ser removidos.')
+    const confirmar = window.confirm('Excluir esta família? Moradores e visitas vinculados podem ser removidos.')
     if (!confirmar) return
 
     if (supabase) {
@@ -1313,32 +1313,32 @@ function App() {
     const altura = normalizarNumeroDecimal(String(dados.get('altura')))
 
     if (cpf.length !== 11) {
-      alert('Informe um CPF com 11 digitos.')
+      alert('Informe um CPF com 11 dígitos.')
       return
     }
 
     if (cns && cns.length !== 15) {
-      alert('Informe um CNS com 15 digitos ou deixe em branco.')
+      alert('Informe um CNS com 15 dígitos ou deixe em branco.')
       return
     }
 
     if (nis && nis.length !== 11) {
-      alert('Informe um NIS com 11 digitos ou deixe em branco.')
+      alert('Informe um NIS com 11 dígitos ou deixe em branco.')
       return
     }
 
     if (String(dados.get('peso')).trim() && !peso) {
-      alert('Informe um peso valido. Exemplo: 72,5')
+      alert('Informe um peso válido. Exemplo: 72,5')
       return
     }
 
     if (String(dados.get('altura')).trim() && !altura) {
-      alert('Informe uma altura valida. Exemplo: 1,65')
+      alert('Informe uma altura válida. Exemplo: 1,65')
       return
     }
 
     if (moradores.some((item) => apenasDigitos(item.cpf) === cpf && String(item.id) !== String(moradorEditando?.id))) {
-      alert('Ja existe um morador cadastrado com este CPF.')
+      alert('Já existe um morador cadastrado com este CPF.')
       return
     }
     const novo = {
@@ -1441,7 +1441,7 @@ function App() {
   }
 
   async function excluirMorador(id: EntityId) {
-    const confirmar = window.confirm('Excluir este morador? O cadastro sera removido da familia.')
+    const confirmar = window.confirm('Excluir este morador? O cadastro será removido da família.')
     if (!confirmar) return
 
     if (supabase) {
@@ -1477,7 +1477,7 @@ function App() {
         : supabase.from('vacinas_moradores').insert(payload).select().single()
       const { data, error } = await query
       if (error) {
-        alert(`Nao foi possivel salvar a vacina. Rode o SQL da tabela vacinas_moradores no Supabase. Detalhe: ${error.message}`)
+        alert(`Não foi possível salvar a vacina. Rode o SQL da tabela vacinas_moradores no Supabase. Detalhe: ${error.message}`)
         return
       }
       const vacinaSalva = mapVacina(data)
@@ -1555,7 +1555,7 @@ function App() {
           await sincronizarFamiliaComUltimaVisita(visitaEditando.familiaId, usuarioAtual)
         }
       } catch (errorSincronizacao) {
-        alert(errorSincronizacao instanceof Error ? errorSincronizacao.message : 'Erro ao atualizar familia da visita.')
+        alert(errorSincronizacao instanceof Error ? errorSincronizacao.message : 'Erro ao atualizar família da visita.')
         return
       }
       await carregarDados(usuarioAtual)
@@ -1575,7 +1575,7 @@ function App() {
   }
 
   async function excluirVisita(visita: Visita) {
-    const confirmar = window.confirm('Excluir esta visita do historico?')
+    const confirmar = window.confirm('Excluir esta visita do histórico?')
     if (!confirmar) return
 
     if (supabase) {
@@ -1588,7 +1588,7 @@ function App() {
       try {
         await sincronizarFamiliaComUltimaVisita(visita.familiaId, usuarioAtual)
       } catch (errorSincronizacao) {
-        alert(errorSincronizacao instanceof Error ? errorSincronizacao.message : 'Erro ao atualizar familia da visita.')
+        alert(errorSincronizacao instanceof Error ? errorSincronizacao.message : 'Erro ao atualizar família da visita.')
         return
       }
       await carregarDados(usuarioAtual)
@@ -1631,7 +1631,7 @@ function App() {
     }
 
     setConfiguracoes(proximasConfiguracoes)
-    setConfiguracoesSalvas('Configuracoes salvas.')
+    setConfiguracoesSalvas('Configurações salvas.')
     window.setTimeout(() => setConfiguracoesSalvas(''), 2600)
   }
 
@@ -1650,7 +1650,7 @@ function App() {
     }
 
     if (novaSenha !== confirmarSenha) {
-      setMensagemConfiguracoes('A confirmacao da senha nao confere.')
+      setMensagemConfiguracoes('A confirmação da senha não confere.')
       return
     }
 
@@ -1684,7 +1684,7 @@ function App() {
   }
 
   function limparDadosLocais() {
-    const confirmar = window.confirm('Limpar os dados locais de demonstracao deste navegador? Dados salvos no Supabase nao serao apagados.')
+    const confirmar = window.confirm('Limpar os dados locais de demonstração deste navegador? Dados salvos no Supabase não serão apagados.')
     if (!confirmar) return
     ;['acs:logradouros', 'acs:familias', 'acs:moradores', 'acs:visitas', 'acs:vacinas', 'acs:configuracoes'].forEach((key) => localStorage.removeItem(key))
     setLogradouros(logradourosIniciais)
@@ -1693,7 +1693,7 @@ function App() {
     setVisitas(visitasIniciais)
     setVacinas(vacinasIniciais)
     setConfiguracoes(configuracoesIniciais)
-    setMensagemConfiguracoes('Dados locais restaurados para demonstracao.')
+    setMensagemConfiguracoes('Dados locais restaurados para demonstração.')
   }
 
   async function sair() {
@@ -1720,10 +1720,10 @@ function App() {
     doc.text(`Emitido em ${formatarData(isoHoje)}`, largura - 14, 23, { align: 'right' })
 
     const cards = [
-      ['Familias', familias.length],
+      ['Famílias', familias.length],
       ['Moradores', moradores.length],
       ['Visitas', visitas.length],
-      ['Pendencias', totalPendencias],
+      ['Pendências', totalPendencias],
     ]
     cards.forEach(([label, valor], index) => {
       const x = 14 + index * 48
@@ -1765,8 +1765,8 @@ function App() {
       didDrawPage: () => {
         doc.setFontSize(8)
         doc.setTextColor(104, 117, 109)
-        doc.text('ACS Controle Saude', 14, altura - 8)
-        doc.text(`Pagina ${doc.getNumberOfPages()}`, largura - 14, altura - 8, { align: 'right' })
+        doc.text('ACS Controle Saúde', 14, altura - 8)
+        doc.text(`Página ${doc.getNumberOfPages()}`, largura - 14, altura - 8, { align: 'right' })
       },
     })
     doc.save(`acs-${tipoRelatorio}-${isoHoje}.pdf`)
@@ -1823,9 +1823,9 @@ function App() {
           <h1>{modoAuth === 'cadastro' ? 'Criar conta' : modoAuth === 'recuperar' ? 'Recuperar senha' : 'Bem-vindo'}</h1>
           <p className="login-copy">
             {modoAuth === 'cadastro'
-              ? 'Cadastre seu acesso para sincronizar os dados da microarea.'
+              ? 'Cadastre seu acesso para sincronizar os dados da microárea.'
               : modoAuth === 'recuperar'
-                ? 'Informe seu e-mail para receber o link de recuperacao.'
+                ? 'Informe seu e-mail para receber o link de recuperação.'
                 : 'Gerencie visitas e indicadores com facilidade.'}
           </p>
           <form onSubmit={entrar} className="form-grid">
@@ -1876,7 +1876,7 @@ function App() {
               <Activity size={20} />
             </div>
             <div>
-              <strong>ACS Saude</strong>
+              <strong>ACS Saúde</strong>
               <small>{configuracoes.microarea}</small>
             </div>
           </div>
@@ -1926,11 +1926,11 @@ function App() {
             <div className="screen-title">
               <div>
                 <p className="eyebrow">Painel da ACS</p>
-                <h2>Inicio</h2>
+                <h2>Início</h2>
               </div>
             </div>
             <div className="quick-filters">
-              {['Hoje', 'Semana', 'Mes', 'Pendencias', 'Prioridades'].map((item) => (
+              {['Hoje', 'Semana', 'Mês', 'Pendências', 'Prioridades'].map((item) => (
                 <button key={item} className={filtroRapido === item ? 'selected' : ''} onClick={() => setFiltroRapido(item)}>
                   {item}
                 </button>
@@ -1951,8 +1951,8 @@ function App() {
               })}
             </div>
             <div className="two-column">
-              <ListaFamilias familias={familiasDashboard} titulo={fraseQuantidade(familiasDashboard.length, 'familia no filtro', 'familias no filtro')} prazoVisitaDias={configuracoes.diasParaVisitaAtrasada} />
-              <ListaMoradores moradores={moradoresDashboard} titulo="Busca rapida" />
+              <ListaFamilias familias={familiasDashboard} titulo={fraseQuantidade(familiasDashboard.length, 'família no filtro', 'famílias no filtro')} prazoVisitaDias={configuracoes.diasParaVisitaAtrasada} />
+              <ListaMoradores moradores={moradoresDashboard} titulo="Busca rápida" />
             </div>
           </section>
         )}
@@ -1962,7 +1962,7 @@ function App() {
             <CrudCard title="Cadastrar logradouro">
               <form className="form-grid" onSubmit={adicionarLogradouro}>
                 <label>
-                  Area ou bairro
+                  Área ou bairro
                   <input name="bairro" placeholder="Ex.: Tucano" defaultValue={logradouroEditando?.bairro ?? ''} required />
                 </label>
                 <label>
@@ -1981,12 +1981,12 @@ function App() {
                   </select>
                 </label>
                 <label>
-                  Quantidade de imoveis
+                  Quantidade de imóveis
                   <input name="quantidadeImoveis" type="number" min="0" placeholder="Ex.: 16" defaultValue={logradouroEditando?.quantidadeImoveis ?? ''} required />
                 </label>
                 <label>
-                  Observacoes do logradouro
-                  <textarea name="observacoes" placeholder="Referencia, trecho, ponto conhecido..." defaultValue={logradouroEditando?.observacoes ?? ''} />
+                  Observações do logradouro
+                  <textarea name="observacoes" placeholder="Referência, trecho, ponto conhecido..." defaultValue={logradouroEditando?.observacoes ?? ''} />
                 </label>
                 <div className="form-actions">
                   <button className="primary-button">{logradouroEditando ? 'Atualizar' : 'Salvar'}</button>
@@ -2006,7 +2006,7 @@ function App() {
                       <MapPinned size={18} />
                       <div>
                         <strong>{item.tipo} {item.nome}</strong>
-                        <small>{item.bairro} - {item.quantidadeImoveis} imoveis</small>
+                        <small>{item.bairro} - {item.quantidadeImoveis} imóveis</small>
                       </div>
                       <div className="card-actions">
                         <button className="icon-action" type="button" onClick={() => setLogradouroEditando(item)} aria-label="Editar logradouro">
@@ -2026,7 +2026,7 @@ function App() {
 
         {tela === 'familias' && (
           <section className="screen two-column animate-in">
-            <CrudCard title={familiaEditando ? 'Editar Familia' : 'Nova Familia'}>
+            <CrudCard title={familiaEditando ? 'Editar Família' : 'Nova Família'}>
               <form className="form-grid" onSubmit={adicionarFamilia} key={familiaEditando?.id ?? 'nova-familia'}>
                 <label>
                   Logradouro
@@ -2037,25 +2037,25 @@ function App() {
                   </select>
                 </label>
                 <label>
-                  Numero da casa
+                  Número da casa
                   <input name="numero" placeholder="Ex.: 123" defaultValue={familiaEditando?.numero ?? ''} required />
                 </label>
                 <label>
-                  Nome da familia
-                  <input name="nome" placeholder="Ex.: Familia Souza" defaultValue={familiaEditando?.nome ?? ''} required />
+                  Nome da família
+                  <input name="nome" placeholder="Ex.: Família Souza" defaultValue={familiaEditando?.nome ?? ''} required />
                 </label>
                 <label>
-                  Tipo do imovel
+                  Tipo do imóvel
                   <select name="tipoImovel" defaultValue={familiaEditando?.tipoImovel ?? 'Casa'}>
                     <option>Casa</option>
                     <option>Apartamento</option>
-                    <option>Comercio</option>
+                    <option>Comércio</option>
                     <option>Outro</option>
                   </select>
                 </label>
                 <label>
-                  Responsavel familiar
-                  <input name="responsavel" placeholder="Nome do responsavel" defaultValue={familiaEditando?.responsavel ?? ''} required />
+                  Responsável familiar
+                  <input name="responsavel" placeholder="Nome do responsável" defaultValue={familiaEditando?.responsavel ?? ''} required />
                 </label>
                 <label>
                   Telefone
@@ -2066,11 +2066,11 @@ function App() {
                   <input name="quantidadeMoradores" type="number" min="0" placeholder="Total de pessoas na casa" defaultValue={familiaEditando?.quantidadeMoradores ?? ''} />
                 </label>
                 <label>
-                  Situacao da moradia
-                  <input name="situacaoMoradia" placeholder="Propria, alugada, cedida..." defaultValue={familiaEditando?.situacaoMoradia ?? ''} />
+                  Situação da moradia
+                  <input name="situacaoMoradia" placeholder="Própria, alugada, cedida..." defaultValue={familiaEditando?.situacaoMoradia ?? ''} />
                 </label>
                 <label>
-                  Data da ultima visita
+                  Data da última visita
                   <input name="ultimaVisita" type="date" defaultValue={familiaEditando?.ultimaVisita ?? isoHoje} />
                 </label>
                 <label>
@@ -2082,8 +2082,8 @@ function App() {
                   </select>
                 </label>
                 <label>
-                  Observacoes do domicilio
-                  <textarea name="observacoes" placeholder="Informacoes importantes sobre a familia ou moradia" defaultValue={familiaEditando?.observacoes ?? ''} />
+                  Observações do domicílio
+                  <textarea name="observacoes" placeholder="Informações importantes sobre a família ou moradia" defaultValue={familiaEditando?.observacoes ?? ''} />
                 </label>
                 <div className="form-actions">
                   <button className="primary-button">{familiaEditando ? 'Atualizar' : 'Salvar'}</button>
@@ -2113,11 +2113,11 @@ function App() {
                 </label>
                 <label>
                   CNS
-                  <input name="cns" inputMode="numeric" maxLength={15} placeholder="Cartao Nacional de Saude" defaultValue={moradorEditando?.cns ?? ''} />
+                  <input name="cns" inputMode="numeric" maxLength={15} placeholder="Cartão Nacional de Saúde" defaultValue={moradorEditando?.cns ?? ''} />
                 </label>
                 <label>
                   NIS
-                  <input name="nis" inputMode="numeric" maxLength={14} placeholder="Numero de Identificacao Social" defaultValue={moradorEditando?.nis ?? ''} />
+                  <input name="nis" inputMode="numeric" maxLength={14} placeholder="Número de Identificação Social" defaultValue={moradorEditando?.nis ?? ''} />
                 </label>
                 <label>
                   Data de nascimento
@@ -2144,7 +2144,7 @@ function App() {
                   <input name="altura" inputMode="decimal" placeholder="Metros. Ex.: 1,65" defaultValue={moradorEditando?.altura ?? ''} />
                 </label>
                 <label>
-                  Familia/domicilio vinculado
+                  Família/domicílio vinculado
                   <select name="familiaId" defaultValue={moradorEditando?.familiaId ?? undefined} required>
                     {familias.map((item) => (
                       <option key={item.id} value={item.id}>{item.nome}</option>
@@ -2154,12 +2154,12 @@ function App() {
                 <CheckGrid
                   items={[
                     ['hipertenso', 'Hipertenso'],
-                    ['diabetico', 'Diabetico'],
+                    ['diabetico', 'Diabético'],
                     ['gestante', 'Gestante'],
-                    ['preNatalEmDia', 'Pre-natal em dia'],
-                    ['bolsaFamilia', 'Bolsa Familia'],
-                    ['responsavelFamiliar', 'Responsavel familiar'],
-                    ['remedioControlado', 'Remedio controlado'],
+                    ['preNatalEmDia', 'Pré-natal em dia'],
+                    ['bolsaFamilia', 'Bolsa Família'],
+                    ['responsavelFamiliar', 'Responsável familiar'],
+                    ['remedioControlado', 'Remédio controlado'],
                     ['vacinaEmDia', 'Vacina em dia'],
                   ]}
                   values={moradorEditando ?? undefined}
@@ -2169,8 +2169,8 @@ function App() {
                   <input name="medicamento" placeholder="Nome do medicamento, se houver" defaultValue={moradorEditando?.medicamento ?? ''} />
                 </label>
                 <label>
-                  Observacoes gerais
-                  <textarea name="observacoes" placeholder="Informacoes importantes para acompanhamento" defaultValue={moradorEditando?.observacoes ?? ''} />
+                  Observações gerais
+                  <textarea name="observacoes" placeholder="Informações importantes para acompanhamento" defaultValue={moradorEditando?.observacoes ?? ''} />
                 </label>
                 <div className="form-actions">
                   <button className="primary-button">{moradorEditando ? 'Atualizar' : 'Salvar'}</button>
@@ -2202,7 +2202,7 @@ function App() {
             <CrudCard title={visitaEditando ? 'Editar Visita' : 'Registrar Visita'}>
               <form className="form-grid" onSubmit={registrarVisita} key={visitaEditando?.id ?? 'nova-visita'}>
                 <label>
-                  Familia visitada
+                  Família visitada
                   <select name="familiaId" defaultValue={visitaEditando?.familiaId ?? ''} required>
                     {familias.map((item) => (
                       <option key={item.id} value={item.id}>{item.nome}</option>
@@ -2214,47 +2214,47 @@ function App() {
                   <input name="data" type="date" defaultValue={visitaEditando?.data ?? isoHoje} required />
                 </label>
                 <label>
-                  ACS responsavel
-                  <input name="acs" placeholder="Nome da ACS" defaultValue={visitaEditando?.acs ?? 'Adriellen Guimaraes'} />
+                  ACS responsável
+                  <input name="acs" placeholder="Nome da ACS" defaultValue={visitaEditando?.acs ?? 'Adriellen Guimarães'} />
                 </label>
                 <label>
                   Pessoas encontradas
                   <input
                     name="pessoasEncontradas"
-                    placeholder="Quem estava na residencia"
+                    placeholder="Quem estava na residência"
                     defaultValue={visitaEditando?.pessoasEncontradas ?? ''}
                   />
                 </label>
                 <label>
-                  Condicoes acompanhadas
-                  <input name="condicoes" placeholder="Hipertensao, gestante, crianca, idoso..." defaultValue={visitaEditando?.condicoes ?? ''} />
+                  Condições acompanhadas
+                  <input name="condicoes" placeholder="Hipertensão, gestante, criança, idoso..." defaultValue={visitaEditando?.condicoes ?? ''} />
                 </label>
                 <label>
-                  Proxima visita recomendada
+                  Próxima visita recomendada
                   <input name="proximaVisita" type="date" defaultValue={visitaEditando?.proximaVisita ?? ''} />
                 </label>
                 <CheckGrid
                   items={[
                     ['vacinaAtualizada', 'Vacina atualizada'],
-                    ['preNatalAtualizado', 'Pre-natal atualizado'],
+                    ['preNatalAtualizado', 'Pré-natal atualizado'],
                     ['medicamentoConfirmado', 'Medicamento confirmado'],
                   ]}
                   values={visitaEditando ?? undefined}
                 />
                 <label>
-                  Observacoes da visita
+                  Observações da visita
                   <textarea
                     name="observacoes"
-                    placeholder="Orientacoes, pendencias e encaminhamentos"
+                    placeholder="Orientações, pendências e encaminhamentos"
                     defaultValue={visitaEditando?.observacoes ?? ''}
                   />
                 </label>
                 <label>
                   Status da visita
                   <select name="status" defaultValue={visitaEditando?.status ?? 'concluida'}>
-                    <option value="concluida">Concluida</option>
+                    <option value="concluida">Concluída</option>
                     <option value="pendente">Pendente</option>
-                    <option value="retorno_necessario">Retorno necessario</option>
+                    <option value="retorno_necessario">Retorno necessário</option>
                   </select>
                 </label>
                 <div className="form-actions">
@@ -2302,7 +2302,7 @@ function App() {
             <div className="report-layout">
               <section className="panel report-controls">
                 <div className="panel-title-row">
-                  <h2>Gerar relatorio</h2>
+                  <h2>Gerar relatório</h2>
                   <span>{relatorioDados.linhas.length}</span>
                 </div>
                 <div className="form-grid">
@@ -2310,7 +2310,7 @@ function App() {
                     Tipo
                     <select value={tipoRelatorio} onChange={(event) => setTipoRelatorio(event.target.value as TipoRelatorio)}>
                       <option value="indicadores">Indicadores por grupo</option>
-                      <option value="familias">Familias e domicilios</option>
+                      <option value="familias">Famílias e domicílios</option>
                       <option value="visitas">Visitas domiciliares</option>
                       <option value="vacinas">Vacinas</option>
                     </select>
@@ -2337,7 +2337,7 @@ function App() {
                   {(tipoRelatorio === 'visitas' || tipoRelatorio === 'vacinas') && (
                     <>
                       <label>
-                        Inicio
+                        Início
                         <input type="date" value={relatorioInicio} onChange={(event) => setRelatorioInicio(event.target.value)} />
                       </label>
                       <label>
@@ -2360,9 +2360,9 @@ function App() {
                         )}
                         {tipoRelatorio === 'visitas' && (
                           <>
-                            <option value="concluida">Concluida</option>
+                            <option value="concluida">Concluída</option>
                             <option value="pendente">Pendente</option>
-                            <option value="retorno_necessario">Retorno necessario</option>
+                            <option value="retorno_necessario">Retorno necessário</option>
                           </>
                         )}
                         {tipoRelatorio === 'vacinas' && (
@@ -2384,10 +2384,10 @@ function App() {
 
               <section className="report-summary">
                 {[
-                  { label: 'Familias', valor: familias.length, icon: Home },
+                  { label: 'Famílias', valor: familias.length, icon: Home },
                   { label: 'Moradores', valor: moradores.length, icon: UsersRound },
                   { label: 'Visitas', valor: visitas.length, icon: CalendarCheck },
-                  { label: 'No relatorio', valor: relatorioDados.linhas.length, icon: ClipboardList },
+                  { label: 'No relatório', valor: relatorioDados.linhas.length, icon: ClipboardList },
                 ].map(({ label, valor, icon: SummaryIcon }) => {
                   return (
                     <article key={label} className="summary-card">
@@ -2433,15 +2433,15 @@ function App() {
 
         {tela === 'configuracoes' && (
           <section className="screen two-column animate-in">
-            <CrudCard title="Configuracoes">
+            <CrudCard title="Configurações">
               <form className="form-grid" onSubmit={salvarConfiguracoes} key={`${configuracoes.unidadeSaude}-${configuracoes.microarea}`}>
                 <label>
-                  Unidade de saude
+                  Unidade de saúde
                   <input name="unidadeSaude" defaultValue={configuracoes.unidadeSaude} placeholder="Ex.: UBS Posto da Feira" required />
                 </label>
                 <label>
-                  Microarea
-                  <input name="microarea" defaultValue={configuracoes.microarea} placeholder="Ex.: Microarea 04" required />
+                  Microárea
+                  <input name="microarea" defaultValue={configuracoes.microarea} placeholder="Ex.: Microárea 04" required />
                 </label>
                 <label>
                   Dias para visita atrasada
@@ -2449,17 +2449,17 @@ function App() {
                 </label>
                 <label className="check-item inline-check">
                   <input name="backupAutomatico" type="checkbox" defaultChecked={configuracoes.backupAutomatico} />
-                  <span>Marcar backup automatico como ativo</span>
+                  <span>Marcar backup automático como ativo</span>
                 </label>
                 {configuracoesSalvas && <p className="form-success">{configuracoesSalvas}</p>}
-                <button className="primary-button"><Save size={17} /> Salvar configuracoes</button>
+                <button className="primary-button"><Save size={17} /> Salvar configurações</button>
               </form>
             </CrudCard>
             <CrudCard title="Ambiente">
               <div className="settings-list">
                 <p>
                   <strong>Banco de dados</strong>
-                  <span>{supabaseConfigurado ? 'Supabase conectado' : 'Modo demonstracao local'}</span>
+                  <span>{supabaseConfigurado ? 'Supabase conectado' : 'Modo demonstração local'}</span>
                 </p>
                 <p>
                   <strong>Login demo</strong>
@@ -2471,15 +2471,15 @@ function App() {
                 </p>
                 <p>
                   <strong>Registros locais</strong>
-                  <span>{logradouros.length} logradouros, {familias.length} familias, {moradores.length} moradores, {visitas.length} visitas</span>
+                  <span>{logradouros.length} logradouros, {familias.length} famílias, {moradores.length} moradores, {visitas.length} visitas</span>
                 </p>
               </div>
             </CrudCard>
-            <CrudCard title="Seguranca">
+            <CrudCard title="Segurança">
               <form className="form-grid" onSubmit={alterarSenha}>
                 <label>
                   Nova senha
-                  <input type="password" value={novaSenha} onChange={(event) => setNovaSenha(event.target.value)} minLength={6} placeholder="Minimo 6 caracteres" />
+                  <input type="password" value={novaSenha} onChange={(event) => setNovaSenha(event.target.value)} minLength={6} placeholder="Mínimo 6 caracteres" />
                 </label>
                 <label>
                   Confirmar senha
@@ -2488,12 +2488,12 @@ function App() {
                 <button className="primary-button"><ShieldCheck size={17} /> Atualizar senha</button>
               </form>
             </CrudCard>
-            <CrudCard title="Backup e manutencao">
+            <CrudCard title="Backup e manutenção">
               <div className="settings-actions">
                 <button className="secondary-button" type="button" onClick={exportarBackup}><Database size={17} /> Baixar backup JSON</button>
                 <button className="secondary-button danger-soft" type="button" onClick={limparDadosLocais}><RotateCcw size={17} /> Restaurar demo local</button>
               </div>
-              <p className="muted">O backup JSON baixa uma copia dos dados carregados neste navegador. A restauracao local nao apaga dados do Supabase.</p>
+              <p className="muted">O backup JSON baixa uma cópia dos dados carregados neste navegador. A restauração local não apaga dados do Supabase.</p>
               {mensagemConfiguracoes && <p className="form-success">{mensagemConfiguracoes}</p>}
             </CrudCard>
           </section>
@@ -2501,8 +2501,8 @@ function App() {
 
         <nav className="mobile-bottom-nav">
           {[
-            { id: 'dashboard' as Tela, label: 'Inicio', icon: Activity },
-            { id: 'familias' as Tela, label: 'Familias', icon: Home },
+            { id: 'dashboard' as Tela, label: 'Início', icon: Activity },
+            { id: 'familias' as Tela, label: 'Famílias', icon: Home },
             { id: 'visitas' as Tela, label: 'Visitas', icon: CalendarCheck },
             { id: 'vacinas' as Tela, label: 'Vacinas', icon: Syringe },
             { id: 'indicadores' as Tela, label: 'Alertas', icon: HeartPulse },
@@ -2731,7 +2731,7 @@ function CadernetaVacinal({
             </label>
             <label>
               Dose
-              <input name="dose" placeholder="Ex.: 1a dose, reforco, anual" defaultValue={registroEditando?.dose ?? ''} required />
+              <input name="dose" placeholder="Ex.: 1ª dose, reforço, anual" defaultValue={registroEditando?.dose ?? ''} required />
             </label>
             <label>
               Data prevista
@@ -2750,8 +2750,8 @@ function CadernetaVacinal({
               </select>
             </label>
             <label>
-              Observacoes
-              <textarea name="observacoes" placeholder="Lote, UBS, orientacao ou motivo da pendencia" defaultValue={registroEditando?.observacoes ?? ''} />
+              Observações
+              <textarea name="observacoes" placeholder="Lote, UBS, orientação ou motivo da pendência" defaultValue={registroEditando?.observacoes ?? ''} />
             </label>
             <div className="form-actions">
               <button className="primary-button">{registroEditando ? 'Atualizar vacina' : 'Salvar vacina'}</button>
@@ -2767,13 +2767,13 @@ function CadernetaVacinal({
             <div className="vaccine-summary">
               <strong>{morador.nome}</strong>
               <span>{morador.idade} anos - {morador.familia}</span>
-              <small>{pendentes.length ? `${pendentes.length} pendencia(s) para conferir` : 'Sem pendencia detalhada registrada'}</small>
+              <small>{pendentes.length ? `${pendentes.length} pendência(s) para conferir` : 'Sem pendência detalhada registrada'}</small>
             </div>
           )}
 
           <div className="vaccine-list">
-            <h3>Calendario sugerido</h3>
-            {sugestoes.length === 0 && <p className="empty-state">Sem sugestoes para este perfil.</p>}
+            <h3>Calendário sugerido</h3>
+            {sugestoes.length === 0 && <p className="empty-state">Sem sugestões para este perfil.</p>}
             {sugestoes.map((item) => (
               <article key={`${item.nome}-${item.dose}`} className="vaccine-row">
                 <div>
@@ -2828,7 +2828,7 @@ function ListaIndicador({
         <article key={morador.id} className="indicator-card">
           <div>
             <strong>{morador.nome}</strong>
-            <span>CPF: {morador.cpf || 'Nao informado'} - {morador.idade} anos</span>
+            <span>CPF: {morador.cpf || 'Não informado'} - {morador.idade} anos</span>
             <small>{morador.familia} - {morador.endereco}</small>
           </div>
           <div className="indicator-actions">
@@ -2880,23 +2880,23 @@ function ListaVisitas({
       <div className="visit-filters">
         <label>
           Buscar
-          <input value={buscaHistorico} onChange={(event) => setBuscaHistorico(event.target.value)} placeholder="Familia, ACS, condicao..." />
+          <input value={buscaHistorico} onChange={(event) => setBuscaHistorico(event.target.value)} placeholder="Família, ACS, condição..." />
         </label>
         <label>
           De
           <input type="date" value={dataInicio} onChange={(event) => setDataInicio(event.target.value)} />
         </label>
         <label>
-          Ate
+          Até
           <input type="date" value={dataFim} onChange={(event) => setDataFim(event.target.value)} />
         </label>
         <label>
           Status
           <select value={statusFiltro} onChange={(event) => setStatusFiltro(event.target.value)}>
             <option value="">Todos</option>
-            <option value="concluida">Concluida</option>
+            <option value="concluida">Concluída</option>
             <option value="pendente">Pendente</option>
-            <option value="retorno_necessario">Retorno necessario</option>
+            <option value="retorno_necessario">Retorno necessário</option>
           </select>
         </label>
       </div>
@@ -2908,7 +2908,7 @@ function ListaVisitas({
               <CalendarCheck size={18} />
               <div>
                 <strong>{visita.familia}</strong>
-                <small>{visita.endereco || 'Endereco nao informado'}</small>
+                <small>{visita.endereco || 'Endereço não informado'}</small>
               </div>
               <div className="visit-card-actions">
                 <span className={`status-pill ${visita.status}`}>{statusTexto(visita.status)}</span>
@@ -2928,10 +2928,10 @@ function ListaVisitas({
             </div>
             <div className="visit-card-body">
               <span>Data: {formatarData(visita.data)}</span>
-              <span>ACS: {visita.acs || 'Nao informado'}</span>
+              <span>ACS: {visita.acs || 'Não informado'}</span>
               {visita.pessoasEncontradas && <span>Pessoas: {visita.pessoasEncontradas}</span>}
-              {visita.condicoes && <span>Condicoes: {visita.condicoes}</span>}
-              {visita.proximaVisita && <span>Proxima: {formatarData(visita.proximaVisita)}</span>}
+              {visita.condicoes && <span>Condições: {visita.condicoes}</span>}
+              {visita.proximaVisita && <span>Próxima: {formatarData(visita.proximaVisita)}</span>}
               {visita.observacoes && <p>{visita.observacoes}</p>}
             </div>
           </article>
@@ -2943,17 +2943,17 @@ function ListaVisitas({
 
 function textoUltimaVisita(data: string) {
   if (!data) return 'Sem visita registrada'
-  return `Ultima visita: ${formatarData(data)} (${diasDesde(data)} dias)`
+  return `Última visita: ${formatarData(data)} (${diasDesde(data)} dias)`
 }
 
 function textoPrazoVisita(data: string, prazoDias = PRAZO_VISITA_DIAS) {
-  if (!data) return `Primeira visita pendente. Ciclo padrao: ${prazoDias} dias.`
+  if (!data) return `Primeira visita pendente. Ciclo padrão: ${prazoDias} dias.`
   const dias = diasDesde(data)
   const proxima = adicionarDias(data, prazoDias)
   const saldo = prazoDias - dias
-  if (saldo > 0) return `Proxima visita ate ${formatarData(proxima)} (${saldo} dias restantes)`
+  if (saldo > 0) return `Próxima visita até ${formatarData(proxima)} (${saldo} dias restantes)`
   if (saldo === 0) return `Visita vence hoje (${formatarData(proxima)})`
-  return `Visita atrasada ha ${Math.abs(saldo)} dias. Passar novamente.`
+  return `Visita atrasada há ${Math.abs(saldo)} dias. Passar novamente.`
 }
 
 function adicionarMeses(data: string, meses: number) {
@@ -2985,28 +2985,28 @@ function calendarioVacinalSugerido(morador: Morador, registros: VacinaRegistro[]
       ? [
           ['BCG', 'Ao nascer', 0],
           ['Hepatite B', 'Ao nascer', 0],
-          ['Pentavalente', '1a dose', 2],
-          ['VIP', '1a dose', 2],
-          ['Rotavirus', '1a dose', 2],
-          ['Pneumococica', '1a dose', 2],
-          ['Meningococica C', '1a dose', 3],
-          ['Pentavalente', '2a dose', 4],
-          ['VIP', '2a dose', 4],
-          ['Rotavirus', '2a dose', 4],
-          ['Pentavalente', '3a dose', 6],
-          ['VIP', '3a dose', 6],
+          ['Pentavalente', '1ª dose', 2],
+          ['VIP', '1ª dose', 2],
+          ['Rotavírus', '1ª dose', 2],
+          ['Pneumocócica', '1ª dose', 2],
+          ['Meningocócica C', '1ª dose', 3],
+          ['Pentavalente', '2ª dose', 4],
+          ['VIP', '2ª dose', 4],
+          ['Rotavírus', '2ª dose', 4],
+          ['Pentavalente', '3ª dose', 6],
+          ['VIP', '3ª dose', 6],
           ['Febre amarela', 'Dose inicial', 9],
-          ['Triplice viral', '1a dose', 12],
-          ['Pneumococica', 'Reforco', 12],
-          ['Meningococica C', 'Reforco', 12],
-          ['DTP', '1o reforco', 15],
-          ['Triplice viral', '2a dose', 15],
-          ['DTP', '2o reforco', 48],
+          ['Tríplice viral', '1ª dose', 12],
+          ['Pneumocócica', 'Reforço', 12],
+          ['Meningocócica C', 'Reforço', 12],
+          ['DTP', '1º reforço', 15],
+          ['Tríplice viral', '2ª dose', 15],
+          ['DTP', '2º reforço', 48],
         ]
       : [
           ['Influenza', `Anual ${hoje.getFullYear()}`, 0],
-          ['COVID-19', 'Conferir reforco', 0],
-          ['dT', 'Conferir reforco 10 anos', 0],
+          ['COVID-19', 'Conferir reforço', 0],
+          ['dT', 'Conferir reforço 10 anos', 0],
         ]
 
   const sugestoesGestante = morador.gestante
@@ -3047,9 +3047,9 @@ function pendenciasVacinais(morador: Morador, registros: VacinaRegistro[]) {
 function pendenciaMorador(morador: Partial<Morador> & { idoso?: boolean; crianca?: boolean; statusFamilia?: StatusVisita; vacinaPendente?: boolean }) {
   const pendencias = []
   if (morador.statusFamilia === 'atrasada') pendencias.push('Visita atrasada')
-  if (morador.gestante && !morador.preNatalEmDia) pendencias.push('Pre-natal pendente')
+  if (morador.gestante && !morador.preNatalEmDia) pendencias.push('Pré-natal pendente')
   if (morador.vacinaPendente || !morador.vacinaEmDia) pendencias.push('Vacina pendente')
-  if (morador.hipertenso) pendencias.push('Hipertensao')
+  if (morador.hipertenso) pendencias.push('Hipertensão')
   return pendencias.slice(0, 1).join('') || 'Em dia'
 }
 
