@@ -221,29 +221,38 @@ alter table public.visitas enable row level security;
 alter table public.historico_visitas enable row level security;
 alter table public.configuracoes enable row level security;
 
+drop policy if exists "usuarios_acessam_proprio_perfil" on public.usuarios;
 create policy "usuarios_acessam_proprio_perfil" on public.usuarios
 for all using (auth.uid() = id) with check (auth.uid() = id);
 
+drop policy if exists "logradouros_do_usuario" on public.logradouros;
 create policy "logradouros_do_usuario" on public.logradouros
 for all using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
 
+drop policy if exists "familias_do_usuario" on public.familias;
 create policy "familias_do_usuario" on public.familias
 for all using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
 
+drop policy if exists "moradores_do_usuario" on public.moradores;
 create policy "moradores_do_usuario" on public.moradores
 for all using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
 
+drop policy if exists "medicamentos_do_usuario" on public.medicamentos;
 create policy "medicamentos_do_usuario" on public.medicamentos
 for all using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
 
+drop policy if exists "vacinas_moradores_do_usuario" on public.vacinas_moradores;
 create policy "vacinas_moradores_do_usuario" on public.vacinas_moradores
 for all using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
 
+drop policy if exists "visitas_do_usuario" on public.visitas;
 create policy "visitas_do_usuario" on public.visitas
 for all using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
 
+drop policy if exists "historico_do_usuario" on public.historico_visitas;
 create policy "historico_do_usuario" on public.historico_visitas
 for all using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
 
+drop policy if exists "configuracoes_do_usuario" on public.configuracoes;
 create policy "configuracoes_do_usuario" on public.configuracoes
 for all using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
