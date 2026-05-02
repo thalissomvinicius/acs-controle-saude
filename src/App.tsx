@@ -623,6 +623,21 @@ function App() {
     [moradores, familiasComEndereco],
   )
 
+  const visitasDetalhadas = useMemo(
+    () =>
+      visitas
+        .map((visita) => {
+          const familia = familiasComEndereco.find((item) => String(item.id) === String(visita.familiaId))
+          return {
+            ...visita,
+            familia: familia?.nome ?? 'Familia nao encontrada',
+            endereco: familia?.endereco ?? '',
+          }
+        })
+        .sort((a, b) => b.data.localeCompare(a.data)),
+    [visitas, familiasComEndereco],
+  )
+
   const indicadores = useMemo(() => {
     const visitasMes = visitas.filter((visita) => visita.data.slice(0, 7) === isoHoje.slice(0, 7)).length
     return [
@@ -1536,6 +1551,7 @@ function App() {
                 <button className="primary-button">Registrar</button>
               </form>
             </CrudCard>
+            <ListaVisitas visitas={visitasDetalhadas} />
           </section>
         )}
 
@@ -1747,6 +1763,44 @@ function ListaIndicador({
         </article>
       ))}
     </div>
+  )
+}
+
+function ListaVisitas({
+  visitas,
+}: {
+  visitas: (Visita & { familia: string; endereco: string })[]
+}) {
+  return (
+    <section className="panel">
+      <div className="panel-title-row">
+        <h2>Visitas registradas</h2>
+        <span>{visitas.length}</span>
+      </div>
+      <div className="stack-list">
+        {visitas.length === 0 && <p className="empty-state">Nenhuma visita registrada ainda.</p>}
+        {visitas.map((visita) => (
+          <article key={visita.id} className="visit-card">
+            <div className="visit-card-head">
+              <CalendarCheck size={18} />
+              <div>
+                <strong>{visita.familia}</strong>
+                <small>{visita.endereco || 'Endereco nao informado'}</small>
+              </div>
+              <span className={`status-pill ${visita.status}`}>{statusTexto(visita.status)}</span>
+            </div>
+            <div className="visit-card-body">
+              <span>Data: {formatarData(visita.data)}</span>
+              <span>ACS: {visita.acs || 'Nao informado'}</span>
+              {visita.pessoasEncontradas && <span>Pessoas: {visita.pessoasEncontradas}</span>}
+              {visita.condicoes && <span>Condicoes: {visita.condicoes}</span>}
+              {visita.proximaVisita && <span>Proxima: {formatarData(visita.proximaVisita)}</span>}
+              {visita.observacoes && <p>{visita.observacoes}</p>}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   )
 }
 

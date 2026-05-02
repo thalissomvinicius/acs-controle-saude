@@ -509,13 +509,15 @@ textarea:focus {
 }
 
 .metric-card.atencao span,
-.status-pill.pendente {
+.status-pill.pendente,
+.status-pill.retorno_necessario {
   background: var(--amber-100);
   color: var(--amber-700);
 }
 
 .metric-card.ok span,
-.status-pill.em_dia {
+.status-pill.em_dia,
+.status-pill.concluida {
   background: var(--mint-100);
   color: var(--green-800);
 }
@@ -537,6 +539,30 @@ textarea:focus {
   border-radius: 18px;
   padding: 18px;
   box-shadow: var(--shadow-card);
+}
+
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.panel-title-row h2 {
+  margin: 0;
+}
+
+.panel-title-row span {
+  min-width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mint-100);
+  color: var(--green-800);
+  font-weight: 880;
 }
 
 .empty-state {
@@ -771,6 +797,54 @@ textarea:focus {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.visit-card {
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--white);
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(24, 35, 29, 0.04);
+}
+
+.visit-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  background: var(--mint-50);
+  border-bottom: 1px solid var(--line);
+}
+
+.visit-card-head svg {
+  color: var(--green-700);
+}
+
+.visit-card-head strong,
+.visit-card-head small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.visit-card-head small {
+  margin-top: 2px;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+.visit-card-body {
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.visit-card-body p {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-weight: 650;
 }
 
 .report-filters {
