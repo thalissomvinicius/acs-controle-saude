@@ -630,10 +630,12 @@ textarea:focus {
   color: var(--green-700);
 }
 
-.family-head span {
+.family-head span,
+.family-head small {
   display: block;
   color: var(--muted);
   margin-top: 2px;
+  line-height: 1.25;
 }
 
 .family-body {

@@ -481,10 +481,22 @@ function App() {
   const [visitas, setVisitas] = usePersistentState('acs:visitas', visitasIniciais)
   const [grupoAtivo, setGrupoAtivo] = useState('Vacinas pendentes')
   const [logradouroEditando, setLogradouroEditando] = useState<Logradouro | null>(null)
+  const [familiaEditando, setFamiliaEditando] = useState<Familia | null>(null)
+  const [moradorEditando, setMoradorEditando] = useState<Morador | null>(null)
 
   function navegarPara(proximaTela: Tela) {
     setTela(proximaTela)
     setMenuAberto(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function editarFamilia(familia: Familia) {
+    setFamiliaEditando(familia)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function editarMorador(morador: Morador) {
+    setMoradorEditando(morador)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -802,48 +814,74 @@ function App() {
 
     if (supabase) {
       const usuarioAtual = await obterUsuarioAutenticado()
-      const { data, error } = await supabase
-        .from('familias')
-        .insert({
-          usuario_id: usuarioAtual,
-          logradouro_id: nova.logradouroId,
-          numero_casa: nova.numero,
-          tipo_imovel: nova.tipoImovel,
-          nome_familia: nova.nome,
-          responsavel_familiar: nova.responsavel,
-          telefone: nova.telefone,
-          quantidade_moradores: nova.quantidadeMoradores,
-          situacao_moradia: nova.situacaoMoradia,
-          observacoes: nova.observacoes,
-          data_ultima_visita: nova.ultimaVisita || null,
-          status_visita: nova.status,
-        })
-        .select()
-        .single()
+      const payload = {
+        usuario_id: usuarioAtual,
+        logradouro_id: nova.logradouroId,
+        numero_casa: nova.numero,
+        tipo_imovel: nova.tipoImovel,
+        nome_familia: nova.nome,
+        responsavel_familiar: nova.responsavel,
+        telefone: nova.telefone,
+        quantidade_moradores: nova.quantidadeMoradores,
+        situacao_moradia: nova.situacaoMoradia,
+        observacoes: nova.observacoes,
+        data_ultima_visita: nova.ultimaVisita || null,
+        status_visita: nova.status,
+      }
+      const query = familiaEditando
+        ? supabase.from('familias').update(payload).eq('id', familiaEditando.id).select().single()
+        : supabase.from('familias').insert(payload).select().single()
+      const { data, error } = await query
       if (error) {
         alert(error.message)
         return
       }
-      setFamilias((atuais) => [...atuais, mapFamilia(data)])
+      const familiaSalva = mapFamilia(data)
+      setFamilias((atuais) => familiaEditando ? atuais.map((item) => String(item.id) === String(familiaSalva.id) ? familiaSalva : item) : [...atuais, familiaSalva])
+      setFamiliaEditando(null)
       event.currentTarget.reset()
       return
     }
 
-    setFamilias((atuais) => [
-      ...atuais,
-      {
-        id: Date.now(),
-        ...nova,
-      },
-    ])
+    setFamilias((atuais) =>
+      familiaEditando
+        ? atuais.map((item) => String(item.id) === String(familiaEditando.id) ? { ...item, ...nova } : item)
+        : [
+            ...atuais,
+            {
+              id: Date.now(),
+              ...nova,
+            },
+          ],
+    )
+    setFamiliaEditando(null)
     event.currentTarget.reset()
+  }
+
+  async function excluirFamilia(id: EntityId) {
+    const confirmar = window.confirm('Excluir esta familia? Moradores e visitas vinculados podem ser removidos.')
+    if (!confirmar) return
+
+    if (supabase) {
+      await obterUsuarioAutenticado()
+      const { error } = await supabase.from('familias').delete().eq('id', id)
+      if (error) {
+        alert(error.message)
+        return
+      }
+    }
+
+    setFamilias((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
+    setMoradores((atuais) => atuais.filter((item) => String(item.familiaId) !== String(id)))
+    setVisitas((atuais) => atuais.filter((item) => String(item.familiaId) !== String(id)))
+    if (familiaEditando && String(familiaEditando.id) === String(id)) setFamiliaEditando(null)
   }
 
   async function adicionarMorador(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const dados = new FormData(event.currentTarget)
     const cpf = String(dados.get('cpf'))
-    if (moradores.some((item) => item.cpf === cpf)) {
+    if (moradores.some((item) => item.cpf === cpf && String(item.id) !== String(moradorEditando?.id))) {
       alert('Ja existe um morador cadastrado com este CPF.')
       return
     }
@@ -877,59 +915,90 @@ function App() {
 
     if (supabase) {
       const usuarioAtual = await obterUsuarioAutenticado()
-      const { data, error } = await supabase
-        .from('moradores')
-        .insert({
-          usuario_id: usuarioAtual,
-          familia_id: novo.familiaId,
-          nome_completo: novo.nome,
-          cpf: novo.cpf,
-          cns: novo.cns,
-          nis: novo.nis,
-          data_nascimento: novo.nascimento,
-          sexo: novo.sexo,
-          telefone: novo.telefone,
-          peso: novo.peso ? Number(novo.peso) : null,
-          altura: novo.altura ? Number(novo.altura) : null,
-          responsavel_familiar: novo.responsavelFamiliar,
-          participa_bolsa_familia: novo.bolsaFamilia,
-          gestante: novo.gestante,
-          pre_natal_em_dia: novo.preNatalEmDia,
-          hipertenso: novo.hipertenso,
-          diabetico: novo.diabetico,
-          usa_remedio_controlado: novo.remedioControlado,
-          vacina_em_dia: novo.vacinaEmDia,
-          observacoes_gerais: novo.observacoes,
-        })
-        .select()
-        .single()
+      const payload = {
+        usuario_id: usuarioAtual,
+        familia_id: novo.familiaId,
+        nome_completo: novo.nome,
+        cpf: novo.cpf,
+        cns: novo.cns,
+        nis: novo.nis,
+        data_nascimento: novo.nascimento,
+        sexo: novo.sexo,
+        telefone: novo.telefone,
+        peso: novo.peso ? Number(novo.peso) : null,
+        altura: novo.altura ? Number(novo.altura) : null,
+        responsavel_familiar: novo.responsavelFamiliar,
+        participa_bolsa_familia: novo.bolsaFamilia,
+        gestante: novo.gestante,
+        pre_natal_em_dia: novo.preNatalEmDia,
+        hipertenso: novo.hipertenso,
+        diabetico: novo.diabetico,
+        usa_remedio_controlado: novo.remedioControlado,
+        vacina_em_dia: novo.vacinaEmDia,
+        observacoes_gerais: novo.observacoes,
+      }
+      const query = moradorEditando
+        ? supabase.from('moradores').update(payload).eq('id', moradorEditando.id).select().single()
+        : supabase.from('moradores').insert(payload).select().single()
+      const { data, error } = await query
       if (error) {
         alert(error.message)
         return
       }
       const moradorSalvo = mapMorador(data)
       if (novo.remedioControlado && novo.medicamento) {
-        await supabase.from('medicamentos').insert({
+        const { data: remediosAtualizados } = await supabase
+          .from('medicamentos')
+          .update({ nome_medicamento: novo.medicamento, uso_continuo: true })
+          .eq('usuario_id', usuarioAtual)
+          .eq('morador_id', moradorSalvo.id)
+          .select('id')
+        if (!remediosAtualizados?.length) await supabase.from('medicamentos').insert({
           usuario_id: usuarioAtual,
           morador_id: moradorSalvo.id,
           nome_medicamento: novo.medicamento,
           uso_continuo: true,
         })
         moradorSalvo.medicamento = novo.medicamento
+      } else if (moradorEditando) {
+        await supabase.from('medicamentos').delete().eq('usuario_id', usuarioAtual).eq('morador_id', moradorSalvo.id)
       }
-      setMoradores((atuais) => [...atuais, moradorSalvo])
+      setMoradores((atuais) => moradorEditando ? atuais.map((item) => String(item.id) === String(moradorSalvo.id) ? moradorSalvo : item) : [...atuais, moradorSalvo])
+      setMoradorEditando(null)
       event.currentTarget.reset()
       return
     }
 
-    setMoradores((atuais) => [
-      ...atuais,
-      {
-        id: Date.now(),
-        ...novo,
-      },
-    ])
+    setMoradores((atuais) =>
+      moradorEditando
+        ? atuais.map((item) => String(item.id) === String(moradorEditando.id) ? { ...item, ...novo } : item)
+        : [
+            ...atuais,
+            {
+              id: Date.now(),
+              ...novo,
+            },
+          ],
+    )
+    setMoradorEditando(null)
     event.currentTarget.reset()
+  }
+
+  async function excluirMorador(id: EntityId) {
+    const confirmar = window.confirm('Excluir este morador? O cadastro sera removido da familia.')
+    if (!confirmar) return
+
+    if (supabase) {
+      await obterUsuarioAutenticado()
+      const { error } = await supabase.from('moradores').delete().eq('id', id)
+      if (error) {
+        alert(error.message)
+        return
+      }
+    }
+
+    setMoradores((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
+    if (moradorEditando && String(moradorEditando.id) === String(id)) setMoradorEditando(null)
   }
 
   async function registrarVisita(event: FormEvent<HTMLFormElement>) {
@@ -1266,11 +1335,11 @@ function App() {
 
         {tela === 'familias' && (
           <section className="screen two-column animate-in">
-            <CrudCard title="Nova Familia">
-              <form className="form-grid" onSubmit={adicionarFamilia}>
+            <CrudCard title={familiaEditando ? 'Editar Familia' : 'Nova Familia'}>
+              <form className="form-grid" onSubmit={adicionarFamilia} key={familiaEditando?.id ?? 'nova-familia'}>
                 <label>
                   Logradouro
-                  <select name="logradouroId" required>
+                  <select name="logradouroId" defaultValue={familiaEditando?.logradouroId ?? undefined} required>
                     {logradouros.map((item) => (
                       <option key={item.id} value={item.id}>{item.nome}</option>
                     ))}
@@ -1278,15 +1347,15 @@ function App() {
                 </label>
                 <label>
                   Numero da casa
-                  <input name="numero" placeholder="Ex.: 123" required />
+                  <input name="numero" placeholder="Ex.: 123" defaultValue={familiaEditando?.numero ?? ''} required />
                 </label>
                 <label>
                   Nome da familia
-                  <input name="nome" placeholder="Ex.: Familia Souza" required />
+                  <input name="nome" placeholder="Ex.: Familia Souza" defaultValue={familiaEditando?.nome ?? ''} required />
                 </label>
                 <label>
                   Tipo do imovel
-                  <select name="tipoImovel" defaultValue="Casa">
+                  <select name="tipoImovel" defaultValue={familiaEditando?.tipoImovel ?? 'Casa'}>
                     <option>Casa</option>
                     <option>Apartamento</option>
                     <option>Comercio</option>
@@ -1295,27 +1364,27 @@ function App() {
                 </label>
                 <label>
                   Responsavel familiar
-                  <input name="responsavel" placeholder="Nome do responsavel" required />
+                  <input name="responsavel" placeholder="Nome do responsavel" defaultValue={familiaEditando?.responsavel ?? ''} required />
                 </label>
                 <label>
                   Telefone
-                  <input name="telefone" placeholder="(00) 00000-0000" />
+                  <input name="telefone" placeholder="(00) 00000-0000" defaultValue={familiaEditando?.telefone ?? ''} />
                 </label>
                 <label>
                   Quantidade de moradores
-                  <input name="quantidadeMoradores" type="number" min="0" placeholder="Total de pessoas na casa" />
+                  <input name="quantidadeMoradores" type="number" min="0" placeholder="Total de pessoas na casa" defaultValue={familiaEditando?.quantidadeMoradores ?? ''} />
                 </label>
                 <label>
                   Situacao da moradia
-                  <input name="situacaoMoradia" placeholder="Propria, alugada, cedida..." />
+                  <input name="situacaoMoradia" placeholder="Propria, alugada, cedida..." defaultValue={familiaEditando?.situacaoMoradia ?? ''} />
                 </label>
                 <label>
                   Data da ultima visita
-                  <input name="ultimaVisita" type="date" defaultValue={isoHoje} />
+                  <input name="ultimaVisita" type="date" defaultValue={familiaEditando?.ultimaVisita ?? isoHoje} />
                 </label>
                 <label>
                   Status da visita
-                  <select name="status" defaultValue="pendente">
+                  <select name="status" defaultValue={familiaEditando?.status ?? 'pendente'}>
                     <option value="em_dia">Em dia</option>
                     <option value="pendente">Pendente</option>
                     <option value="atrasada">Atrasada</option>
@@ -1323,42 +1392,49 @@ function App() {
                 </label>
                 <label>
                   Observacoes do domicilio
-                  <textarea name="observacoes" placeholder="Informacoes importantes sobre a familia ou moradia" />
+                  <textarea name="observacoes" placeholder="Informacoes importantes sobre a familia ou moradia" defaultValue={familiaEditando?.observacoes ?? ''} />
                 </label>
-                <button className="primary-button">Salvar</button>
+                <div className="form-actions">
+                  <button className="primary-button">{familiaEditando ? 'Atualizar' : 'Salvar'}</button>
+                  {familiaEditando && (
+                    <button className="secondary-button" type="button" onClick={() => setFamiliaEditando(null)}>
+                      Cancelar
+                    </button>
+                  )}
+                </div>
               </form>
             </CrudCard>
-            <ListaFamilias familias={familiasComEndereco} titulo="Cadastradas" />
+            <ListaFamilias familias={familiasComEndereco} titulo="Cadastradas" onEdit={editarFamilia} onDelete={excluirFamilia} />
           </section>
         )}
 
         {tela === 'moradores' && (
           <section className="screen two-column animate-in">
-            <CrudCard title="Novo Morador">
-              <form className="form-grid" onSubmit={adicionarMorador}>
+            <CrudCard title={moradorEditando ? 'Editar Morador' : 'Novo Morador'}>
+              <form className="form-grid" onSubmit={adicionarMorador} key={moradorEditando?.id ?? 'novo-morador'}>
                 <label>
                   Nome completo
-                  <input name="nome" placeholder="Ex.: Maria Souza" required />
+                  <input name="nome" placeholder="Ex.: Maria Souza" defaultValue={moradorEditando?.nome ?? ''} required />
                 </label>
                 <label>
                   CPF
-                  <input name="cpf" placeholder="000.000.000-00" required />
+                  <input name="cpf" placeholder="000.000.000-00" defaultValue={moradorEditando?.cpf ?? ''} required />
                 </label>
                 <label>
                   CNS
-                  <input name="cns" placeholder="Cartao Nacional de Saude" />
+                  <input name="cns" placeholder="Cartao Nacional de Saude" defaultValue={moradorEditando?.cns ?? ''} />
                 </label>
                 <label>
                   NIS
-                  <input name="nis" placeholder="Numero de Identificacao Social" />
+                  <input name="nis" placeholder="Numero de Identificacao Social" defaultValue={moradorEditando?.nis ?? ''} />
                 </label>
                 <label>
                   Data de nascimento
-                  <input name="nascimento" type="date" required />
+                  <input name="nascimento" type="date" defaultValue={moradorEditando?.nascimento ?? ''} required />
                 </label>
                 <label>
                   Sexo
-                  <select name="sexo" defaultValue="Feminino">
+                  <select name="sexo" defaultValue={moradorEditando?.sexo ?? 'Feminino'}>
                     <option>Feminino</option>
                     <option>Masculino</option>
                     <option>Outro</option>
@@ -1366,19 +1442,19 @@ function App() {
                 </label>
                 <label>
                   Telefone
-                  <input name="telefone" placeholder="(00) 00000-0000" />
+                  <input name="telefone" placeholder="(00) 00000-0000" defaultValue={moradorEditando?.telefone ?? ''} />
                 </label>
                 <label>
                   Peso
-                  <input name="peso" placeholder="Kg" />
+                  <input name="peso" placeholder="Kg" defaultValue={moradorEditando?.peso ?? ''} />
                 </label>
                 <label>
                   Altura
-                  <input name="altura" placeholder="Metros. Ex.: 1,65" />
+                  <input name="altura" placeholder="Metros. Ex.: 1,65" defaultValue={moradorEditando?.altura ?? ''} />
                 </label>
                 <label>
                   Familia/domicilio vinculado
-                  <select name="familiaId" required>
+                  <select name="familiaId" defaultValue={moradorEditando?.familiaId ?? undefined} required>
                     {familias.map((item) => (
                       <option key={item.id} value={item.id}>{item.nome}</option>
                     ))}
@@ -1395,19 +1471,27 @@ function App() {
                     ['remedioControlado', 'Remedio controlado'],
                     ['vacinaEmDia', 'Vacina em dia'],
                   ]}
+                  values={moradorEditando ?? undefined}
                 />
                 <label>
                   Medicamento controlado
-                  <input name="medicamento" placeholder="Nome do medicamento, se houver" />
+                  <input name="medicamento" placeholder="Nome do medicamento, se houver" defaultValue={moradorEditando?.medicamento ?? ''} />
                 </label>
                 <label>
                   Observacoes gerais
-                  <textarea name="observacoes" placeholder="Informacoes importantes para acompanhamento" />
+                  <textarea name="observacoes" placeholder="Informacoes importantes para acompanhamento" defaultValue={moradorEditando?.observacoes ?? ''} />
                 </label>
-                <button className="primary-button">Salvar</button>
+                <div className="form-actions">
+                  <button className="primary-button">{moradorEditando ? 'Atualizar' : 'Salvar'}</button>
+                  {moradorEditando && (
+                    <button className="secondary-button" type="button" onClick={() => setMoradorEditando(null)}>
+                      Cancelar
+                    </button>
+                  )}
+                </div>
               </form>
             </CrudCard>
-            <ListaMoradores moradores={resultadosBusca} titulo="Lista" />
+            <ListaMoradores moradores={resultadosBusca} titulo="Lista" onEdit={editarMorador} onDelete={excluirMorador} />
           </section>
         )}
 
@@ -1543,12 +1627,12 @@ function CrudCard({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-function CheckGrid({ items }: { items: [string, string][] }) {
+function CheckGrid({ items, values }: { items: [string, string][]; values?: Record<string, unknown> }) {
   return (
     <div className="check-grid">
       {items.map(([name, label]) => (
         <label key={name} className="check-item">
-          <input name={name} type="checkbox" />
+          <input name={name} type="checkbox" defaultChecked={Boolean(values?.[name])} />
           <span>{label}</span>
         </label>
       ))}
@@ -1556,7 +1640,17 @@ function CheckGrid({ items }: { items: [string, string][] }) {
   )
 }
 
-function ListaFamilias({ familias, titulo }: { familias: (Familia & { endereco: string; bairro: string })[]; titulo: string }) {
+function ListaFamilias({
+  familias,
+  titulo,
+  onEdit,
+  onDelete,
+}: {
+  familias: (Familia & { endereco: string; bairro: string })[]
+  titulo: string
+  onEdit?: (familia: Familia) => void
+  onDelete?: (id: EntityId) => void
+}) {
   return (
     <section className="panel">
       <h2>{titulo}</h2>
@@ -1570,6 +1664,20 @@ function ListaFamilias({ familias, titulo }: { familias: (Familia & { endereco: 
                 <strong>{familia.nome}</strong>
                 <small>{familia.endereco}</small>
               </div>
+              {(onEdit || onDelete) && (
+                <div className="card-actions">
+                  {onEdit && (
+                    <button className="icon-action" type="button" onClick={() => onEdit(familia)} aria-label="Editar familia">
+                      <Edit3 size={17} />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button className="icon-action danger" type="button" onClick={() => onDelete(familia.id)} aria-label="Excluir familia">
+                      <Trash2 size={17} />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             <div className="family-body">
               <p>{textoUltimaVisita(familia.ultimaVisita)}</p>
@@ -1585,7 +1693,17 @@ function ListaFamilias({ familias, titulo }: { familias: (Familia & { endereco: 
   )
 }
 
-function ListaMoradores({ moradores, titulo }: { moradores: (Morador & { idade: number; crianca: boolean; idoso: boolean; familia: string; endereco: string })[]; titulo: string }) {
+function ListaMoradores({
+  moradores,
+  titulo,
+  onEdit,
+  onDelete,
+}: {
+  moradores: (Morador & { idade: number; crianca: boolean; idoso: boolean; familia: string; endereco: string })[]
+  titulo: string
+  onEdit?: (morador: Morador) => void
+  onDelete?: (id: EntityId) => void
+}) {
   return (
     <section className="panel">
       <h2>{titulo}</h2>
@@ -1599,6 +1717,20 @@ function ListaMoradores({ moradores, titulo }: { moradores: (Morador & { idade: 
                 <strong>{morador.nome}</strong>
                 <small>{morador.idade} anos - {morador.familia}</small>
               </div>
+              {(onEdit || onDelete) && (
+                <div className="card-actions">
+                  {onEdit && (
+                    <button className="icon-action" type="button" onClick={() => onEdit(morador)} aria-label="Editar morador">
+                      <Edit3 size={17} />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button className="icon-action danger" type="button" onClick={() => onDelete(morador.id)} aria-label="Excluir morador">
+                      <Trash2 size={17} />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </article>
         ))}
