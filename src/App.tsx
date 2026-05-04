@@ -2692,7 +2692,7 @@ function App() {
         {tela === 'moradores' && familias.length > 0 && (
           <section className="screen two-column residents-screen animate-in">
             <CrudCard title={moradorEditando ? 'Editar Morador' : 'Novo Morador'}>
-              <form className="form-grid" onSubmit={adicionarMorador} key={moradorEditando?.id ?? 'novo-morador'}>
+              <form className="morador-form" onSubmit={adicionarMorador} key={moradorEditando?.id ?? 'novo-morador'}>
                 <div className="form-steps-nav">
                   {[1, 2, 3].map(p => (
                     <button key={p} type="button" className={`step-dot ${passoMorador === p ? 'active' : ''}`} onClick={() => setPassoMorador(p)}>
