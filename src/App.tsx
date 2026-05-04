@@ -876,6 +876,7 @@ function App() {
     if (!supabase) return ''
     const { data, error } = await supabase.auth.getUser()
     if (error || !data.user) {
+      alert('Sessão expirada. Saia e entre novamente.')
       throw new Error('Sessão expirada. Saia e entre novamente.')
     }
     if (data.user.id !== usuarioId) {
@@ -1254,7 +1255,8 @@ function App() {
       observacoes: String(dados.get('observacoes')),
     }
 
-    if (supabase) {
+    try {
+      if (supabase) {
       const usuarioAtual = await obterUsuarioAutenticado()
       const payload = {
         usuario_id: usuarioAtual,
@@ -1277,6 +1279,10 @@ function App() {
       setLogradouroEditando(null)
       form.reset()
       return
+      }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
     setLogradouros((atuais) =>
@@ -1298,13 +1304,18 @@ function App() {
     const confirmar = window.confirm('Excluir este logradouro? Famílias vinculadas podem impedir a exclusão.')
     if (!confirmar) return
 
-    if (supabase) {
+    try {
+      if (supabase) {
       await obterUsuarioAutenticado()
       const { error } = await supabase.from('logradouros').delete().eq('id', id)
       if (error) {
         alert(error.message)
         return
       }
+      }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
     setLogradouros((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
@@ -1331,7 +1342,8 @@ function App() {
       status: String(dados.get('status') || 'pendente') as StatusVisita,
     }
 
-    if (supabase) {
+    try {
+      if (supabase) {
       const usuarioAtual = await obterUsuarioAutenticado()
       const payload = {
         usuario_id: usuarioAtual,
@@ -1360,6 +1372,10 @@ function App() {
       setFamiliaEditando(null)
       form.reset()
       return
+      }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
     setFamilias((atuais) =>
@@ -1381,13 +1397,18 @@ function App() {
     const confirmar = window.confirm('Excluir esta família? Moradores e visitas vinculados podem ser removidos.')
     if (!confirmar) return
 
-    if (supabase) {
+    try {
+      if (supabase) {
       await obterUsuarioAutenticado()
       const { error } = await supabase.from('familias').delete().eq('id', id)
       if (error) {
         alert(error.message)
         return
       }
+      }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
     setFamilias((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
@@ -1463,7 +1484,8 @@ function App() {
       return
     }
 
-    if (supabase) {
+    try {
+      if (supabase) {
       const usuarioAtual = await obterUsuarioAutenticado()
       const payload = {
         usuario_id: usuarioAtual,
@@ -1517,6 +1539,10 @@ function App() {
       setMoradorEditando(null)
       form.reset()
       return
+      }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
     setMoradores((atuais) =>
@@ -1538,13 +1564,18 @@ function App() {
     const confirmar = window.confirm('Excluir este morador? O cadastro será removido da família.')
     if (!confirmar) return
 
-    if (supabase) {
+    try {
+      if (supabase) {
       await obterUsuarioAutenticado()
       const { error } = await supabase.from('moradores').delete().eq('id', id)
       if (error) {
         alert(error.message)
         return
       }
+      }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
     setMoradores((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
@@ -1554,7 +1585,8 @@ function App() {
   }
 
   async function salvarVacinaMorador(registro: Omit<VacinaRegistro, 'id'>, id?: EntityId) {
-    if (supabase) {
+    try {
+      if (supabase) {
       const usuarioAtual = await obterUsuarioAutenticado()
       const payload = {
         usuario_id: usuarioAtual,
@@ -1577,6 +1609,10 @@ function App() {
       const vacinaSalva = mapVacina(data)
       setVacinas((atuais) => id ? atuais.map((item) => String(item.id) === String(id) ? vacinaSalva : item) : [...atuais, vacinaSalva])
       return
+      }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
     const vacinaSalva = { id: id ?? Date.now(), ...registro }
@@ -1587,13 +1623,18 @@ function App() {
     const confirmar = window.confirm('Excluir este registro de vacina?')
     if (!confirmar) return
 
-    if (supabase) {
+    try {
+      if (supabase) {
       await obterUsuarioAutenticado()
       const { error } = await supabase.from('vacinas_moradores').delete().eq('id', id)
       if (error) {
         alert(error.message)
         return
       }
+      }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
     setVacinas((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
@@ -1672,7 +1713,8 @@ function App() {
     const confirmar = window.confirm('Excluir esta visita do histórico?')
     if (!confirmar) return
 
-    if (supabase) {
+    try {
+      if (supabase) {
       const usuarioAtual = await obterUsuarioAutenticado()
       const { error } = await supabase.from('visitas').delete().eq('id', visita.id)
       if (error) {
@@ -1690,6 +1732,10 @@ function App() {
       const proximasVisitas = visitas.filter((item) => String(item.id) !== String(visita.id))
       setVisitas(proximasVisitas)
       recalcularFamiliasLocais(proximasVisitas, [visita.familiaId])
+      }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
     if (visitaEditando && String(visitaEditando.id) === String(visita.id)) setVisitaEditando(null)
@@ -1706,7 +1752,8 @@ function App() {
       backupAutomatico: dados.get('backupAutomatico') === 'on',
     }
 
-    if (supabase) {
+    try {
+      if (supabase) {
       const usuarioAtual = await obterUsuarioAutenticado()
       const { error } = await supabase.from('configuracoes').upsert(
         {
@@ -1722,6 +1769,10 @@ function App() {
         alert(error.message)
         return
       }
+      }
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
     setConfiguracoes(proximasConfiguracoes)
