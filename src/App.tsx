@@ -539,6 +539,13 @@ function apenasDigitos(valor: string) {
   return valor.replace(/\D/g, '')
 }
 
+function formatarCPF(cpf: string) {
+  if (!cpf) return ''
+  const limpo = apenasDigitos(cpf)
+  if (limpo.length !== 11) return cpf
+  return limpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+}
+
 function normalizarNumeroDecimal(valor: string) {
   const limpo = valor.trim().replace(',', '.')
   if (!limpo) return ''
@@ -1156,7 +1163,7 @@ function App() {
       colunas: ['Nome', 'CPF', 'Idade', 'Família', 'Endereço', 'Pendência'],
       linhas: moradoresRelatorio.map((morador) => [
         morador.nome,
-        morador.cpf || '-',
+        morador.cpf ? formatarCPF(morador.cpf) : '-',
         morador.idade,
         morador.familia,
         morador.endereco,
@@ -2197,7 +2204,7 @@ function App() {
                 </label>
                 <label>
                   CPF
-                  <input name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" defaultValue={moradorEditando?.cpf ?? ''} required />
+                  <input name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" defaultValue={moradorEditando?.cpf ? formatarCPF(moradorEditando.cpf) : ''} required />
                 </label>
                 <label>
                   CNS
@@ -2918,7 +2925,7 @@ function ListaIndicador({
         <article key={morador.id} className="indicator-card">
           <div>
             <strong>{morador.nome}</strong>
-            <span>CPF: {morador.cpf || 'Não informado'} - {morador.idade} anos</span>
+            <span>CPF: {morador.cpf ? formatarCPF(morador.cpf) : 'Não informado'} - {morador.idade} anos</span>
             <small>{morador.familia} - {morador.endereco}</small>
           </div>
           <div className="indicator-actions">

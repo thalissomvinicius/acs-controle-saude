@@ -1,8 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="128" fill="#0d3f25"/>
-  <circle cx="256" cy="258" r="176" fill="#1f7a43"/>
-  <path fill="#ffffff" d="m132 243 124-99 124 99v126c0 22-18 40-40 40H172c-22 0-40-18-40-40z"/>
-  <path fill="#edf8f1" d="M205 409v-94c0-17 14-31 31-31h40c17 0 31 14 31 31v94z"/>
-  <path fill="none" stroke="#1f7a43" stroke-linecap="round" stroke-linejoin="round" stroke-width="28" d="M176 256h45l18-39 35 82 19-43h43"/>
-  <path fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="24" d="m115 242 141-113 141 113"/>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="shield" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.85" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#022c22" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <path filter="url(#shadow)" fill="url(#shield)" d="M256 96 L144 144 V240 C144 336 224 400 256 416 C288 400 368 336 368 240 V144 Z"/>
+  <path fill="#047857" d="M272 176h-32v48h-48v32h48v48h32v-48h48v-32h-48z"/>
 </svg>
