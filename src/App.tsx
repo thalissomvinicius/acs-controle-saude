@@ -1736,6 +1736,7 @@ function App() {
         usa_remedio_controlado: novo.remedioControlado,
         vacina_em_dia: novo.vacinaEmDia,
         observacoes_gerais: novo.observacoes,
+        dum: novo.dum,
       }
       const query = moradorEditando
         ? supabase.from('moradores').update(payload).eq('id', moradorEditando.id).select().single()
@@ -2700,106 +2701,115 @@ function App() {
                   ))}
                 </div>
 
-                {passoMorador === 1 && (
-                  <div className="form-step animate-in">
-                    <label>
-                      Nome completo
-                      <input name="nome" placeholder="Ex.: Maria Souza" defaultValue={moradorEditando?.nome ?? ''} required />
-                    </label>
-                    <label>
-                      CPF <small className="ajuda-tooltip">(Opcional)</small>
-                      <input name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" defaultValue={moradorEditando?.cpf ? formatarCPF(moradorEditando.cpf) : ''} required />
-                    </label>
-                    <label>
-                      Data de nascimento
-                      <input name="nascimento" type="date" defaultValue={moradorEditando?.nascimento ?? ''} required />
-                    </label>
-                    <label>
-                      Sexo
-                      <select name="sexo" defaultValue={moradorEditando?.sexo ?? 'Feminino'}>
-                        <option value="Feminino">Feminino</option>
-                        <option value="Masculino">Masculino</option>
-                        <option value="Outro">Outro</option>
-                      </select>
-                    </label>
-                    <label>
-                      Telefone
-                      <input name="telefone" placeholder="(00) 00000-0000" defaultValue={moradorEditando?.telefone ?? ''} />
-                    </label>
-                    <button type="button" className="primary-button outline" onClick={() => setPassoMorador(2)}>Próximo passo →</button>
-                  </div>
-                )}
+                <div className="form-step animate-in" style={{ display: passoMorador === 1 ? 'flex' : 'none' }}>
+                  <label>
+                    Nome completo
+                    <input name="nome" placeholder="Ex.: Maria Souza" defaultValue={moradorEditando?.nome ?? ''} required />
+                  </label>
+                  <label>
+                    CPF <small className="ajuda-tooltip">(Opcional)</small>
+                    <input name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" defaultValue={moradorEditando?.cpf ? formatarCPF(moradorEditando.cpf) : ''} />
+                  </label>
+                  <label>
+                    Data de nascimento
+                    <input name="nascimento" type="date" defaultValue={moradorEditando?.nascimento ?? ''} required />
+                  </label>
+                  <label>
+                    Sexo
+                    <select name="sexo" defaultValue={moradorEditando?.sexo ?? 'Feminino'}>
+                      <option value="Feminino">Feminino</option>
+                      <option value="Masculino">Masculino</option>
+                      <option value="Outro">Outro</option>
+                    </select>
+                  </label>
+                  <label>
+                    Telefone
+                    <input name="telefone" placeholder="(00) 00000-0000" defaultValue={moradorEditando?.telefone ?? ''} />
+                  </label>
+                  <button type="button" className="primary-button outline" onClick={(e) => {
+                    const step = e.currentTarget.closest('.form-step')
+                    const inputs = step?.querySelectorAll('input, select') as NodeListOf<HTMLInputElement | HTMLSelectElement>
+                    for (const input of Array.from(inputs || [])) {
+                      if (!input.reportValidity()) return
+                    }
+                    setPassoMorador(2)
+                  }}>Próximo passo →</button>
+                </div>
 
-                {passoMorador === 2 && (
-                  <div className="form-step animate-in">
+                <div className="form-step animate-in" style={{ display: passoMorador === 2 ? 'flex' : 'none' }}>
+                  <label>
+                    Família/domicílio vinculado
+                    <select name="familiaId" defaultValue={moradorEditando?.familiaId ?? ''} required>
+                      <option value="" disabled>Selecione uma família</option>
+                      {familiasComEndereco.map((item) => (
+                        <option key={item.id} value={item.id}>{item.nome} — {item.endereco}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    CNS <small className="ajuda-tooltip">(Cartão SUS)</small>
+                    <input name="cns" inputMode="numeric" maxLength={15} placeholder="000 0000 0000 0000" defaultValue={moradorEditando?.cns ?? ''} />
+                  </label>
+                  <label>
+                    NIS <small className="ajuda-tooltip">(Bolsa Família)</small>
+                    <input name="nis" inputMode="numeric" maxLength={14} placeholder="Número do NIS" defaultValue={moradorEditando?.nis ?? ''} />
+                  </label>
+                  <div className="two-column-small">
                     <label>
-                      Família/domicílio vinculado
-                      <select name="familiaId" defaultValue={moradorEditando?.familiaId ?? ''} required>
-                        <option value="" disabled>Selecione uma família</option>
-                        {familiasComEndereco.map((item) => (
-                          <option key={item.id} value={item.id}>{item.nome} — {item.endereco}</option>
-                        ))}
-                      </select>
+                      Peso (kg)
+                      <input name="peso" type="number" step="0.1" min="0" placeholder="00.0" defaultValue={moradorEditando?.peso ?? ''} />
                     </label>
                     <label>
-                      CNS <small className="ajuda-tooltip">(Cartão SUS)</small>
-                      <input name="cns" inputMode="numeric" maxLength={15} placeholder="000 0000 0000 0000" defaultValue={moradorEditando?.cns ?? ''} />
+                      Altura (m)
+                      <input name="altura" type="number" step="0.01" min="0" placeholder="0.00" defaultValue={moradorEditando?.altura ?? ''} />
                     </label>
-                    <label>
-                      NIS <small className="ajuda-tooltip">(Bolsa Família)</small>
-                      <input name="nis" inputMode="numeric" maxLength={14} placeholder="Número do NIS" defaultValue={moradorEditando?.nis ?? ''} />
-                    </label>
-                    <div className="two-column-small">
-                      <label>
-                        Peso (kg)
-                        <input name="peso" inputMode="decimal" placeholder="Ex: 70" defaultValue={moradorEditando?.peso ?? ''} />
-                      </label>
-                      <label>
-                        Altura (m)
-                        <input name="altura" inputMode="decimal" placeholder="Ex: 1.75" defaultValue={moradorEditando?.altura ?? ''} />
-                      </label>
-                    </div>
-                    <div className="form-actions-between">
-                      <button type="button" className="secondary-button" onClick={() => setPassoMorador(1)}>← Voltar</button>
-                      <button type="button" className="primary-button outline" onClick={() => setPassoMorador(3)}>Próximo passo →</button>
-                    </div>
                   </div>
-                )}
+                  <div className="form-actions-between">
+                    <button type="button" className="secondary-button" onClick={() => setPassoMorador(1)}>← Voltar</button>
+                    <button type="button" className="primary-button outline" onClick={(e) => {
+                      const step = e.currentTarget.closest('.form-step')
+                      const inputs = step?.querySelectorAll('input, select') as NodeListOf<HTMLInputElement | HTMLSelectElement>
+                      for (const input of Array.from(inputs || [])) {
+                        if (!input.reportValidity()) return
+                      }
+                      setPassoMorador(3)
+                    }}>Próximo passo →</button>
+                  </div>
+                </div>
 
-                {passoMorador === 3 && (
-                  <div className="form-step animate-in">
-                    <p className="step-hint">Marque as condições de saúde deste morador:</p>
-                    <CheckGrid
-                      items={[
-                        ['hipertenso', 'Hipertenso'],
-                        ['diabetico', 'Diabético'],
-                        ['gestante', 'Gestante'],
-                        ['preNatalEmDia', 'Pré-natal em dia'],
-                        ['bolsaFamilia', 'Bolsa Família'],
-                        ['responsavelFamiliar', 'Responsável familiar'],
-                        ['remedioControlado', 'Remédio controlado'],
-                        ['vacinaEmDia', 'Vacina em dia'],
-                      ]}
-                      values={moradorEditando ?? undefined}
-                    />
-                    <label>
-                      DUM (Data da Última Menstruação)
-                      <input name="dum" type="date" defaultValue={moradorEditando?.dum ?? ''} />
-                    </label>
-                    <label>
-                      Medicamento controlado
-                      <input name="medicamento" placeholder="Nome do medicamento" defaultValue={moradorEditando?.medicamento ?? ''} />
-                    </label>
-                    <label>
-                      Observações gerais
-                      <textarea name="observacoes" placeholder="Outras informações" defaultValue={moradorEditando?.observacoes ?? ''} />
-                    </label>
-                    <div className="form-actions-between">
-                      <button type="button" className="secondary-button" onClick={() => setPassoMorador(2)}>← Voltar</button>
-                      <button className="primary-button">{moradorEditando ? 'Atualizar Morador' : 'Finalizar Cadastro'}</button>
-                    </div>
+                <div className="form-step animate-in" style={{ display: passoMorador === 3 ? 'flex' : 'none' }}>
+                  <p className="step-hint">Marque as condições de saúde deste morador:</p>
+                  <CheckGrid
+                    items={[
+                      ['hipertenso', 'Hipertenso'],
+                      ['diabetico', 'Diabético'],
+                      ['gestante', 'Gestante'],
+                      ['preNatalEmDia', 'Pré-natal em dia'],
+                      ['bolsaFamilia', 'Bolsa Família'],
+                      ['responsavelFamiliar', 'Responsável familiar'],
+                      ['remedioControlado', 'Remédio controlado'],
+                      ['vacinaEmDia', 'Vacina em dia'],
+                    ]}
+                    values={moradorEditando ?? undefined}
+                  />
+                  <label>
+                    DUM (Data da Última Menstruação)
+                    <input name="dum" type="date" defaultValue={moradorEditando?.dum ?? ''} />
+                  </label>
+                  <label>
+                    Medicamento controlado
+                    <input name="medicamento" placeholder="Nome do medicamento" defaultValue={moradorEditando?.medicamento ?? ''} />
+                  </label>
+                  <label>
+                    Observações gerais
+                    <textarea name="observacoes" placeholder="Outras informações" defaultValue={moradorEditando?.observacoes ?? ''} />
+                  </label>
+                  <div className="form-actions-between">
+                    <button type="button" className="secondary-button" onClick={() => setPassoMorador(2)}>← Voltar</button>
+                    <button className="primary-button">{moradorEditando ? 'Atualizar Morador' : 'Finalizar Cadastro'}</button>
                   </div>
-                )}
+                </div>
+                
                 {moradorEditando && (
                   <div className="form-actions center mt-1">
                     <button className="secondary-button mini" type="button" onClick={() => setMoradorEditando(null)}>
