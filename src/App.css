@@ -2059,3 +2059,43 @@ h1, h2, h3, strong {
   margin-left: 4px;
   display: block;
 }
+
+.bloqueio-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  flex: 1;
+}
+
+.bloqueio-wrapper .bloqueio-educativo {
+  max-width: 480px;
+  width: 100%;
+  padding: 48px 32px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 24px;
+  border: 1px dashed rgba(16, 185, 129, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+}
+
+.bloqueio-wrapper .bloqueio-icon {
+  font-size: 4rem;
+}
+
+.bloqueio-wrapper .bloqueio-educativo h3 {
+  font-size: 1.4rem;
+}
+
+.bloqueio-wrapper .bloqueio-educativo p {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .bloqueio-wrapper {
+    padding: 24px 12px;
+  }
+  .bloqueio-wrapper .bloqueio-educativo {
+    padding: 32px 20px;
+  }
+}

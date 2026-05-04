@@ -2193,6 +2193,12 @@ function App() {
             </CrudCard>
             <CrudCard title="Lista">
               <div className="stack-list">
+                {logradouros.length === 0 && (
+                  <EmptyStateEducativo
+                    titulo="Seu setor está vazio!"
+                    texto="Você ainda não possui ruas cadastradas. Preencha o formulário ao lado para cadastrar o primeiro logradouro da sua microárea."
+                  />
+                )}
                 {logradouros.map((item) => (
                   <article key={item.id} className="family-card">
                     <div className="family-head">
@@ -2296,7 +2302,18 @@ function App() {
           </section>
         )}
 
-        {tela === 'moradores' && (
+        {tela === 'moradores' && familias.length === 0 && (
+          <div className="bloqueio-wrapper">
+            <BloqueioEducativo
+              titulo="Cadastre uma Família Primeiro"
+              texto="Os moradores pertencem a famílias. Antes de adicionar pessoas, você precisa ter pelo menos uma família cadastrada na sua microárea."
+              botaoTexto="→ Ir para Famílias"
+              onClick={() => navegarPara('familias')}
+            />
+          </div>
+        )}
+
+        {tela === 'moradores' && familias.length > 0 && (
           <section className="screen two-column residents-screen animate-in">
             <CrudCard title={moradorEditando ? 'Editar Morador' : 'Novo Morador'}>
               <form className="form-grid" onSubmit={adicionarMorador} key={moradorEditando?.id ?? 'novo-morador'}>
@@ -2395,7 +2412,18 @@ function App() {
           </section>
         )}
 
-        {tela === 'visitas' && (
+        {tela === 'visitas' && familias.length === 0 && (
+          <div className="bloqueio-wrapper">
+            <BloqueioEducativo
+              titulo="Sem famílias para visitar"
+              texto="Você precisa ter famílias cadastradas na sua microárea antes de registrar visitas domiciliares."
+              botaoTexto="→ Ir para Famílias"
+              onClick={() => navegarPara('familias')}
+            />
+          </div>
+        )}
+
+        {tela === 'visitas' && familias.length > 0 && (
           <section className="screen visits-screen animate-in">
             <CrudCard title={visitaEditando ? 'Editar Visita' : 'Registrar Visita'}>
               <form className="form-grid" onSubmit={registrarVisita} key={visitaEditando?.id ?? 'nova-visita'}>
