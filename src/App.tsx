@@ -2046,7 +2046,7 @@ function App() {
     }
 
     // Agrupar moradores por família
-    const moradoresPorFamilia: Record<string, any[]> = {}
+    const moradoresPorFamilia: Record<string, (typeof moradoresDetalhados)[number][]> = {}
     moradoresFiltrados.forEach(m => {
       const key = String(m.familiaId)
       if (!moradoresPorFamilia[key]) moradoresPorFamilia[key] = []
@@ -2054,7 +2054,7 @@ function App() {
     })
 
     // Transformar em chunks (cada família gera um ou mais blocos de 6)
-    const blocks: any[][] = []
+    const blocks: (typeof moradoresDetalhados)[number][][] = []
     Object.values(moradoresPorFamilia).forEach(familiaMoradores => {
       for (let i = 0; i < familiaMoradores.length; i += 6) {
         blocks.push(familiaMoradores.slice(i, i + 6))
@@ -2083,7 +2083,7 @@ function App() {
     setModalFichaAberta(false)
   }
 
-  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: Morador[], x: number, dataFicha: string, acsNome: string, indicesMarcados: number[]) {
+  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: (typeof moradoresDetalhados)[number][], x: number, dataFicha: string, acsNome: string, indicesMarcados: number[]) {
     // Título Centralizado
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
@@ -2093,7 +2093,7 @@ function App() {
 
     // Cabeçalho campos
     const primeiraPessoa = moradores[0]
-    const familiaInfo = primeiraPessoa ? `${primeiraPessoa.familia} - ${primeiraPessoa.endereco}` : '________________________________________________'
+    const familiaInfo = primeiraPessoa ? `${primeiraPessoa.familia || ''} - ${primeiraPessoa.endereco || ''}` : '________________________________________________'
 
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
