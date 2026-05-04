@@ -2075,7 +2075,7 @@ function App() {
     setModalFichaAberta(false)
   }
 
-  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: any[], x: number, dataFicha: string, acsNome: string, indicesMarcados: number[]) {
+  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: Morador[], x: number, dataFicha: string, acsNome: string, indicesMarcados: number[]) {
     // Título Centralizado
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
@@ -2140,22 +2140,10 @@ function App() {
     })
 
     // Checkboxes - Fonte Pequena
-    const autoTableData = (doc as any).lastAutoTable
+    const autoTableData = (doc as any).lastAutoTable as { finalY: number }
     const finalY = autoTableData.finalY + 4
     doc.setFontSize(6)
     
-    const checkboxes = [
-      'CONDIÇÕES DE SAÚDE QUE IMPEDEM A IDA À UBS.',
-      'FATOS QUE IMPEDEM OS DESLOCAMENTOS À UBS, COMO ENCHENTES, FALTA DE TRANSPORTE, ETC.',
-      'HORÁRIO DE ATENDIMENTO NA UBS INVIÁVEL.',
-      'NÃO CUMPRIU AS CONDICIONALIDADES POR QUESTÕES SOCIAIS, CULTURAIS, ÉTNICAS OU RELIGIOSAS.',
-      'HOUVE RECUSA EM REALIZAR O ACOMPANHAMENTO DENTRO DA ROTINA DE ATENÇÃO BÁSICA EM SAÚDE.',
-      'INDÍCIOS DE SITUAÇÃO DE RISCO SOCIAL COMO NEGLIGÊNCIA, ABUSO SEXUAL, VIOLÊNCIA.',
-      'RESPONSÁVEL AFIRMA QUE NÃO FAZ MAIS PARTE DO PROGRAMA.',
-      'CRIANÇA COM CONDIÇÃO ESPECÍFICA DE SAÚDE QUE NECESSITA DE VACINA ESPECIAL (CRIE).',
-      'FALTA DE OFERTA DE VACINA OU DE INSUMOS NECESSÁRIOS PARA VACINAÇÃO: SERINGAS, ETC.'
-    ]
-
     OPCOES_FICHA_CHECKBOXES.forEach((txt, idx) => {
       const col = idx % 2
       const row = Math.floor(idx / 2)
@@ -3062,7 +3050,7 @@ function App() {
           <div className="modal-card animate-in">
             <header className="modal-header">
               <h2>Opções da Ficha Oficial</h2>
-              <button className="icon-button" onClick={() => setModalFichaAberta(false)}><X /></button>
+              <button className="icon-button" onClick={() => setModalFichaAberta(false)} title="Fechar"><X /></button>
             </header>
             <div className="modal-body">
               <div className="form-grid">
