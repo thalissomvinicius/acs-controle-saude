@@ -2185,6 +2185,9 @@ h1, h2, h3, strong {
   flex-direction: column;
   gap: 16px;
 }
+.form-step--hidden {
+  display: none;
+}
 .step-hint {
   font-size: 0.9rem;
   color: var(--slate-500);

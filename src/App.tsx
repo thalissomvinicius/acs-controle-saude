@@ -2701,7 +2701,7 @@ function App() {
                   ))}
                 </div>
 
-                <div className="form-step animate-in" style={{ display: passoMorador === 1 ? 'flex' : 'none' }}>
+                <div className={`form-step animate-in${passoMorador === 1 ? '' : ' form-step--hidden'}`}>
                   <label>
                     Nome completo
                     <input name="nome" placeholder="Ex.: Maria Souza" defaultValue={moradorEditando?.nome ?? ''} required />
@@ -2736,7 +2736,7 @@ function App() {
                   }}>Próximo passo →</button>
                 </div>
 
-                <div className="form-step animate-in" style={{ display: passoMorador === 2 ? 'flex' : 'none' }}>
+                <div className={`form-step animate-in${passoMorador === 2 ? '' : ' form-step--hidden'}`}>
                   <label>
                     Família/domicílio vinculado
                     <select name="familiaId" defaultValue={moradorEditando?.familiaId ?? ''} required>
@@ -2777,7 +2777,7 @@ function App() {
                   </div>
                 </div>
 
-                <div className="form-step animate-in" style={{ display: passoMorador === 3 ? 'flex' : 'none' }}>
+                <div className={`form-step animate-in${passoMorador === 3 ? '' : ' form-step--hidden'}`}>
                   <p className="step-hint">Marque as condições de saúde deste morador:</p>
                   <CheckGrid
                     items={[
