@@ -9,6 +9,7 @@ import {
   Download,
   Edit3,
   FileSpreadsheet,
+  FileText,
   HeartPulse,
   Home,
   LogOut,
@@ -18,7 +19,6 @@ import {
   RotateCcw,
   Save,
   Search,
-  Settings,
   ShieldCheck,
   Syringe,
   Trash2,
@@ -89,6 +89,7 @@ type Morador = {
   bolsaFamilia: boolean
   gestante: boolean
   preNatalEmDia: boolean
+  dum: string
   hipertenso: boolean
   diabetico: boolean
   remedioControlado: boolean
@@ -221,6 +222,7 @@ const moradoresIniciais: Morador[] = [
     remedioControlado: true,
     medicamento: 'Losartana',
     vacinaEmDia: true,
+    dum: '',
     observacoes: 'Acompanhar pressão arterial.',
   },
   {
@@ -244,6 +246,7 @@ const moradoresIniciais: Morador[] = [
     remedioControlado: false,
     medicamento: '',
     vacinaEmDia: false,
+    dum: '',
     observacoes: 'Vacina pendente.',
   },
   {
@@ -267,6 +270,7 @@ const moradoresIniciais: Morador[] = [
     remedioControlado: false,
     medicamento: '',
     vacinaEmDia: true,
+    dum: '',
     observacoes: 'Pré-natal pendente.',
   },
   {
@@ -290,6 +294,7 @@ const moradoresIniciais: Morador[] = [
     remedioControlado: true,
     medicamento: 'Metformina, Losartana',
     vacinaEmDia: false,
+    dum: '',
     observacoes: 'Prioridade por hipertensão, diabetes e vacina.',
   },
 ]
@@ -365,17 +370,39 @@ const vacinasCatalogo = [
   'dTpa',
 ]
 
-const menus = [
-  { id: 'dashboard' as Tela, label: 'Início', icon: Activity },
-  { id: 'logradouros' as Tela, label: 'Logradouros', icon: MapPinned },
-  { id: 'familias' as Tela, label: 'Famílias', icon: Home },
-  { id: 'moradores' as Tela, label: 'Moradores', icon: UsersRound },
-  { id: 'visitas' as Tela, label: 'Visitas', icon: CalendarCheck },
-  { id: 'vacinas' as Tela, label: 'Vacinas', icon: Syringe },
-  { id: 'indicadores' as Tela, label: 'Indicadores', icon: HeartPulse },
-  { id: 'relatorios' as Tela, label: 'Relatórios', icon: ClipboardList },
-  { id: 'configuracoes' as Tela, label: 'Configurações', icon: Settings },
+const menuGrupos = [
+  {
+    grupo: 'Início',
+    itens: [
+      { id: 'dashboard' as Tela, label: 'Painel', icon: Activity },
+    ],
+  },
+  {
+    grupo: 'Cadastro',
+    itens: [
+      { id: 'logradouros' as Tela, label: 'Logradouros', icon: MapPinned },
+      { id: 'familias' as Tela, label: 'Famílias', icon: Home },
+      { id: 'moradores' as Tela, label: 'Moradores', icon: UsersRound },
+    ],
+  },
+  {
+    grupo: 'Acompanhamento',
+    itens: [
+      { id: 'visitas' as Tela, label: 'Visitas', icon: CalendarCheck },
+      { id: 'vacinas' as Tela, label: 'Vacinas', icon: Syringe },
+    ],
+  },
+  {
+    grupo: 'Análise',
+    itens: [
+      { id: 'indicadores' as Tela, label: 'Indicadores', icon: HeartPulse },
+      { id: 'relatorios' as Tela, label: 'Relatórios', icon: ClipboardList },
+    ],
+  },
 ]
+
+// Lista plana de menus (compatibilidade)
+const menus = menuGrupos.flatMap((g) => g.itens)
 
 const caminhoPorTela: Record<Tela, string> = {
   dashboard: '/',
@@ -629,6 +656,7 @@ function mapMorador(row: Record<string, unknown>): Morador {
     bolsaFamilia: Boolean(row.participa_bolsa_familia),
     gestante: Boolean(row.gestante),
     preNatalEmDia: Boolean(row.pre_natal_em_dia),
+    dum: String(row.dum ?? ''),
     hipertenso: Boolean(row.hipertenso),
     diabetico: Boolean(row.diabetico),
     remedioControlado: Boolean(row.usa_remedio_controlado),
@@ -712,6 +740,35 @@ function BloqueioEducativo({ titulo, texto, botaoTexto, onClick }: { titulo: str
   )
 }
 
+type ToastTipo = 'sucesso' | 'erro' | 'info'
+type ToastMsg = { id: number; texto: string; tipo: ToastTipo }
+
+function useToast() {
+  const [toasts, setToasts] = useState<ToastMsg[]>([])
+  const mostrar = useCallback((texto: string, tipo: ToastTipo = 'sucesso') => {
+    const id = Date.now()
+    setToasts((prev) => [...prev, { id, texto, tipo }])
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500)
+  }, [])
+  return { toasts, mostrar }
+}
+
+function ToastContainer({ toasts }: { toasts: ToastMsg[] }) {
+  if (!toasts.length) return null
+  return (
+    <div className="toast-container" aria-live="polite">
+      {toasts.map((t) => (
+        <div key={t.id} className={`toast toast-${t.tipo}`}>
+          <span className="toast-icon">
+            {t.tipo === 'sucesso' ? '✅' : t.tipo === 'erro' ? '❌' : 'ℹ️'}
+          </span>
+          <span>{t.texto}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function App() {
   const [logado, setLogado] = useState(false)
   const [carregando, setCarregando] = useState(supabaseConfigurado)
@@ -745,6 +802,9 @@ function App() {
   const [moradorEditando, setMoradorEditando] = useState<Morador | null>(null)
   const [visitaEditando, setVisitaEditando] = useState<Visita | null>(null)
   const [moradorVacinaId, setMoradorVacinaId] = useState<EntityId | ''>('')
+  const [passoMorador, setPassoMorador] = useState(1)
+  const [mostrarTodosIndicadores, setMostrarTodosIndicadores] = useState(false)
+  const { toasts, mostrar: mostrarToast } = useToast()
 
   function alterarModoAuth(proximoModo: ModoAuth) {
     setModoAuth(proximoModo)
@@ -971,6 +1031,7 @@ function App() {
           familia: familia?.nome ?? '',
           endereco: familia?.endereco ?? '',
           ultimaVisita: familia?.ultimaVisita ?? '',
+          logradouroId: familia?.logradouroId ?? '',
           statusFamilia: familia?.status ?? 'pendente',
         }
       }),
@@ -1299,6 +1360,7 @@ function App() {
       }
       const salvo = mapLogradouro(data)
       setLogradouros((atuais) => logradouroEditando ? atuais.map((item) => String(item.id) === String(salvo.id) ? salvo : item) : [...atuais, salvo])
+      mostrarToast(logradouroEditando ? 'Logradouro atualizado!' : 'Logradouro cadastrado!')
       setLogradouroEditando(null)
       form.reset()
       return
@@ -1341,6 +1403,7 @@ function App() {
       alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
+    mostrarToast('Logradouro excluído.')
     setLogradouros((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
     if (logradouroEditando && String(logradouroEditando.id) === String(id)) {
       setLogradouroEditando(null)
@@ -1392,6 +1455,7 @@ function App() {
       }
       const familiaSalva = mapFamilia(data)
       setFamilias((atuais) => familiaEditando ? atuais.map((item) => String(item.id) === String(familiaSalva.id) ? familiaSalva : item) : [...atuais, familiaSalva])
+      mostrarToast(familiaEditando ? 'Família atualizada!' : 'Família cadastrada!')
       setFamiliaEditando(null)
       form.reset()
       return
@@ -1434,6 +1498,7 @@ function App() {
       alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
+    mostrarToast('Família excluída.')
     setFamilias((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
     setMoradores((atuais) => atuais.filter((item) => String(item.familiaId) !== String(id)))
     setVisitas((atuais) => atuais.filter((item) => String(item.familiaId) !== String(id)))
@@ -1494,6 +1559,7 @@ function App() {
       bolsaFamilia: dados.get('bolsaFamilia') === 'on',
       gestante: dados.get('gestante') === 'on',
       preNatalEmDia: dados.get('preNatalEmDia') === 'on',
+      dum: String(dados.get('dum') || ''),
       hipertenso: dados.get('hipertenso') === 'on',
       diabetico: dados.get('diabetico') === 'on',
       remedioControlado: dados.get('remedioControlado') === 'on',
@@ -1559,6 +1625,7 @@ function App() {
         await supabase.from('medicamentos').delete().eq('usuario_id', usuarioAtual).eq('morador_id', moradorSalvo.id)
       }
       setMoradores((atuais) => moradorEditando ? atuais.map((item) => String(item.id) === String(moradorSalvo.id) ? moradorSalvo : item) : [...atuais, moradorSalvo])
+      mostrarToast(moradorEditando ? 'Dados do morador atualizados!' : 'Morador cadastrado!')
       setMoradorEditando(null)
       form.reset()
       return
@@ -1601,6 +1668,7 @@ function App() {
       alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
+    mostrarToast('Morador removido.')
     setMoradores((atuais) => atuais.filter((item) => String(item.id) !== String(id)))
     setVacinas((atuais) => atuais.filter((item) => String(item.moradorId) !== String(id)))
     if (moradorEditando && String(moradorEditando.id) === String(id)) setMoradorEditando(null)
@@ -1717,6 +1785,7 @@ function App() {
         return
       }
       await carregarDados(usuarioAtual)
+      mostrarToast('Visita registrada com sucesso!')
       setVisitaEditando(null)
       form.reset()
       return
@@ -1754,6 +1823,7 @@ function App() {
     } else {
       const proximasVisitas = visitas.filter((item) => String(item.id) !== String(visita.id))
       setVisitas(proximasVisitas)
+      mostrarToast('Registro de visita removido.')
       recalcularFamiliasLocais(proximasVisitas, [visita.familiaId])
       }
     } catch (e) {
@@ -1798,6 +1868,7 @@ function App() {
       alert(e instanceof Error ? e.message : "Erro inesperado ao conectar com o servidor.")
     }
 
+    mostrarToast('Configurações salvas!')
     setConfiguracoes(proximasConfiguracoes)
     setConfiguracoesSalvas('Configurações salvas.')
     window.setTimeout(() => setConfiguracoesSalvas(''), 2600)
@@ -1940,6 +2011,151 @@ function App() {
     doc.save(`acs-${tipoRelatorio}-${isoHoje}.pdf`)
   }
 
+  function exportarFichaAcompanhamento() {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const larguraDoc = doc.internal.pageSize.getWidth() // 297
+    const alturaDoc = doc.internal.pageSize.getHeight() // 210
+    const margemX = 10
+    const margemY = 8
+    const espacamentoVertical = 4
+    const alturaBloco = (alturaDoc - (margemY * 2) - (espacamentoVertical * 2)) / 3
+
+    // Filtrar moradores baseado no filtro de logradouro selecionado
+    let moradoresFiltrados = moradoresDetalhados
+    if (relatorioLogradouro) {
+      moradoresFiltrados = moradoresDetalhados.filter(m => String(m.logradouroId) === String(relatorioLogradouro))
+    }
+
+    // Agrupar em chunks de 6 para caber na tabela da ficha
+    const chunks = []
+    for (let i = 0; i < moradoresFiltrados.length; i += 6) {
+      chunks.push(moradoresFiltrados.slice(i, i + 6))
+    }
+
+    // Se não houver moradores, gera pelo menos uma página com blocos vazios
+    if (chunks.length === 0) chunks.push([])
+
+    // Loop pelas páginas (3 blocos por página)
+    for (let p = 0; p < chunks.length; p += 3) {
+      if (p > 0) doc.addPage()
+
+      for (let b = 0; b < 3; b++) {
+        const chunkIndex = p + b
+        // Se não houver dados para o bloco mas for o primeiro da página, desenhamos vazio.
+        // Se b > 0 e não houver dados, paramos.
+        if (chunkIndex >= chunks.length && b > 0) break
+
+        const moradoresChunk = chunks[chunkIndex] || []
+        const yBase = margemY + b * (alturaBloco + espacamentoVertical)
+
+        desenharBlocoFicha(doc, yBase, larguraDoc - (margemX * 2), alturaBloco, moradoresChunk, margemX)
+      }
+    }
+
+    doc.save(`acs-ficha-oficial-${isoHoje}.pdf`)
+  }
+
+  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: Partial<Morador>[], x: number) {
+    // Título Centralizado
+    doc.setDrawColor(0)
+    doc.setLineWidth(0.3)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(11)
+    doc.text('FICHA DE ACOMPANHAMENTO', x + largura / 2, y + 6, { align: 'center' })
+
+    // Cabeçalho campos
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.text(`DATA DO ACOMPANHAMENTO: ____ / ____ / ______`, x, y + 12)
+    
+    doc.text(`NOME DO ACS QUE REALIZOU O ACOMPANHAMENTO: _________________________________________________`, x, y + 18)
+    doc.text(`NOME DA UNIDADE DE ABRANGÊNCIA: ${configuracoes.unidadeSaude.toUpperCase()}`, x + largura, y + 18, { align: 'right' })
+
+    // Tabela - 6 linhas exatas
+    const colunas = ['NIS', 'CNS', 'NOME COMPLETO DO CIDADÃO', 'D. NASC.', 'PESO', 'ALTURA', 'VACINAÇÃO?', 'GESTANTE?', 'DUM', 'PRÉ-NATAL?']
+    const rows = Array(6).fill(null).map((_, i) => {
+      const m = moradores[i]
+      if (!m) return ['', '', '', '', '', '', '', '', '', '']
+      return [
+        m.nis || '',
+        m.cns || '',
+        m.nome.toUpperCase(),
+        formatarData(m.nascimento),
+        m.peso || '',
+        m.altura || '',
+        m.vacinaEmDia ? 'SIM' : 'NÃO',
+        m.gestante ? 'SIM' : 'NÃO',
+        m.dum ? formatarData(m.dum) : '',
+        m.preNatalEmDia ? 'SIM' : 'NÃO'
+      ]
+    })
+
+    autoTable(doc, {
+      head: [colunas],
+      body: rows,
+      startY: y + 21,
+      margin: { left: x },
+      tableWidth: largura,
+      theme: 'grid',
+      styles: {
+        fontSize: 6.5,
+        cellPadding: 1.5,
+        lineColor: [0, 0, 0],
+        lineWidth: 0.1,
+        textColor: [0, 0, 0],
+        font: 'helvetica',
+      },
+      headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        lineWidth: 0.2,
+      },
+      columnStyles: {
+        2: { cellWidth: 70 }, // Nome completo mais largo
+        0: { cellWidth: 20 },
+        1: { cellWidth: 25 },
+        3: { cellWidth: 20 },
+      }
+    })
+
+    // Checkboxes - Fonte Pequena
+    const autoTableData = (doc as any).lastAutoTable
+    const finalY = autoTableData.finalY + 4
+    doc.setFontSize(6)
+    
+    const checkboxes = [
+      'CONDIÇÕES DE SAÚDE QUE IMPEDEM A IDA À UBS.',
+      'FATOS QUE IMPEDEM OS DESLOCAMENTOS À UBS, COMO ENCHENTES, FALTA DE TRANSPORTE, ETC.',
+      'HORÁRIO DE ATENDIMENTO NA UBS INVIÁVEL.',
+      'NÃO CUMPRIU AS CONDICIONALIDADES POR QUESTÕES SOCIAIS, CULTURAIS, ÉTNICAS OU RELIGIOSAS.',
+      'HOUVE RECUSA EM REALIZAR O ACOMPANHAMENTO DENTRO DA ROTINA DE ATENÇÃO BÁSICA EM SAÚDE.',
+      'INDÍCIOS DE SITUAÇÃO DE RISCO SOCIAL COMO NEGLIGÊNCIA, ABUSO SEXUAL, VIOLÊNCIA.',
+      'RESPONSÁVEL AFIRMA QUE NÃO FAZ MAIS PARTE DO PROGRAMA.',
+      'CRIANÇA COM CONDIÇÃO ESPECÍFICA DE SAÚDE QUE NECESSITA DE VACINA ESPECIAL (CRIE).',
+      'FALTA DE OFERTA DE VACINA OU DE INSUMOS NECESSÁRIOS PARA VACINAÇÃO: SERINGAS, ETC.'
+    ]
+
+    checkboxes.forEach((txt, idx) => {
+      const col = idx % 2
+      const row = Math.floor(idx / 2)
+      const xPos = x + (col * (largura / 2))
+      const yPos = finalY + (row * 3.5)
+      
+      doc.rect(xPos, yPos - 2, 2.5, 2.5) // Quadradinho
+      doc.text(txt, xPos + 4, yPos - 0.2)
+    })
+    
+    // Linha de separação entre blocos
+    if (y < 130) { // Não desenhar na última
+      doc.setDrawColor(180)
+      doc.setLineWidth(0.1)
+      doc.setLineDashPattern([2, 2], 0)
+      doc.line(x, y + altura + 1, x + largura, y + altura + 1)
+      doc.setLineDashPattern([], 0)
+    }
+  }
+
   function exportarExcel() {
     const linhas = relatorioDados.linhas
       .map(
@@ -2053,23 +2269,30 @@ function App() {
           </button>
         </div>
         <nav>
-          {menus.map((item) => {
-            const Icon = item.icon
-            return (
-              <button
-                key={item.id}
-                className={tela === item.id ? 'active' : ''}
-                onClick={() => navegarPara(item.id)}
-              >
-                <Icon size={20} />
-                {item.label}
-              </button>
-            )
-          })}
-          <button onClick={sair}>
-            <LogOut size={20} />
-            Sair
-          </button>
+          {menuGrupos.map((grupo) => (
+            <div key={grupo.grupo} className="menu-group">
+              <p className="menu-group-label">{grupo.grupo}</p>
+              {grupo.itens.map((item) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.id}
+                    className={tela === item.id ? 'active' : ''}
+                    onClick={() => navegarPara(item.id)}
+                  >
+                    <Icon size={20} />
+                    {item.label}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+          <div className="menu-group">
+            <button onClick={sair}>
+              <LogOut size={20} />
+              Sair
+            </button>
+          </div>
         </nav>
       </aside>
       {menuAberto && <button className="menu-backdrop mobile-only" onClick={() => setMenuAberto(false)} aria-label="Fechar menu" />}
@@ -2130,7 +2353,7 @@ function App() {
               ))}
             </div>
             <div className="metric-grid">
-              {indicadores.map((card) => {
+              {indicadores.slice(0, mostrarTodosIndicadores ? undefined : 4).map((card) => {
                 const Icon = card.icon
                 return (
                   <button key={card.label} className={`metric-card ${card.status}`} onClick={() => navegarPara('indicadores')}>
@@ -2142,6 +2365,11 @@ function App() {
                   </button>
                 )
               })}
+            </div>
+            <div className="center-actions">
+              <button className="secondary-button outline mini" onClick={() => setMostrarTodosIndicadores(!mostrarTodosIndicadores)}>
+                {mostrarTodosIndicadores ? 'Ocultar indicadores' : 'Ver todos os 15 indicadores'}
+              </button>
             </div>
             <div className="two-column">
               <ListaFamilias familias={familiasDashboard} titulo={fraseQuantidade(familiasDashboard.length, 'família no filtro', 'famílias no filtro')} prazoVisitaDias={configuracoes.diasParaVisitaAtrasada} />
@@ -2317,84 +2545,121 @@ function App() {
           <section className="screen two-column residents-screen animate-in">
             <CrudCard title={moradorEditando ? 'Editar Morador' : 'Novo Morador'}>
               <form className="form-grid" onSubmit={adicionarMorador} key={moradorEditando?.id ?? 'novo-morador'}>
-                <label>
-                  Nome completo
-                  <input name="nome" placeholder="Ex.: Maria Souza" defaultValue={moradorEditando?.nome ?? ''} required />
-                </label>
-                <label>
-                  CPF <small className="ajuda-tooltip">(Opcional, ajuda a evitar duplicidade no e-SUS)</small>
-                  <input name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" defaultValue={moradorEditando?.cpf ? formatarCPF(moradorEditando.cpf) : ''} required />
-                </label>
-                <label>
-                  CNS <small className="ajuda-tooltip">(Cartão Nacional de Saúde)</small>
-                  <input name="cns" inputMode="numeric" maxLength={15} placeholder="Cartão Nacional de Saúde" defaultValue={moradorEditando?.cns ?? ''} />
-                </label>
-                <label>
-                  NIS <small className="ajuda-tooltip">(Essencial se participa do Bolsa Família)</small>
-                  <input name="nis" inputMode="numeric" maxLength={14} placeholder="Número de Identificação Social" defaultValue={moradorEditando?.nis ?? ''} />
-                </label>
-                <label>
-                  Data de nascimento
-                  <input name="nascimento" type="date" defaultValue={moradorEditando?.nascimento ?? ''} required />
-                </label>
-                <label>
-                  Sexo
-                  <select name="sexo" defaultValue={moradorEditando?.sexo ?? 'Feminino'}>
-                    <option value="Feminino">Feminino</option>
-                    <option value="Masculino">Masculino</option>
-                    <option value="Outro">Outro</option>
-                  </select>
-                </label>
-                <label>
-                  Telefone
-                  <input name="telefone" placeholder="(00) 00000-0000" defaultValue={moradorEditando?.telefone ?? ''} />
-                </label>
-                <label>
-                  Peso
-                  <input name="peso" inputMode="decimal" placeholder="Kg" defaultValue={moradorEditando?.peso ?? ''} />
-                </label>
-                <label>
-                  Altura
-                  <input name="altura" inputMode="decimal" placeholder="Metros. Ex.: 1,65" defaultValue={moradorEditando?.altura ?? ''} />
-                </label>
-                <label>
-                  Família/domicílio vinculado
-                  <select name="familiaId" defaultValue={moradorEditando?.familiaId ?? ''} required>
-                    <option value="" disabled>Selecione uma família</option>
-                    {familias.map((item) => (
-                      <option key={item.id} value={item.id}>{item.nome}</option>
-                    ))}
-                  </select>
-                </label>
-                <CheckGrid
-                  items={[
-                    ['hipertenso', 'Hipertenso'],
-                    ['diabetico', 'Diabético'],
-                    ['gestante', 'Gestante'],
-                    ['preNatalEmDia', 'Pré-natal em dia'],
-                    ['bolsaFamilia', 'Bolsa Família'],
-                    ['responsavelFamiliar', 'Responsável familiar'],
-                    ['remedioControlado', 'Remédio controlado'],
-                    ['vacinaEmDia', 'Vacina em dia'],
-                  ]}
-                  values={moradorEditando ?? undefined}
-                />
-                <label>
-                  Medicamento controlado
-                  <input name="medicamento" placeholder="Nome do medicamento, se houver" defaultValue={moradorEditando?.medicamento ?? ''} />
-                </label>
-                <label>
-                  Observações gerais
-                  <textarea name="observacoes" placeholder="Informações importantes para acompanhamento" defaultValue={moradorEditando?.observacoes ?? ''} />
-                </label>
-                <div className="form-actions">
-                  <button className="primary-button">{moradorEditando ? 'Atualizar' : 'Salvar'}</button>
-                  {moradorEditando && (
-                    <button className="secondary-button" type="button" onClick={() => setMoradorEditando(null)}>
-                      Cancelar
+                <div className="form-steps-nav">
+                  {[1, 2, 3].map(p => (
+                    <button key={p} type="button" className={`step-dot ${passoMorador === p ? 'active' : ''}`} onClick={() => setPassoMorador(p)}>
+                      {p === 1 ? '🆔 Identificação' : p === 2 ? '🏠 Vínculo' : '🏥 Saúde'}
                     </button>
-                  )}
+                  ))}
                 </div>
+
+                {passoMorador === 1 && (
+                  <div className="form-step animate-in">
+                    <label>
+                      Nome completo
+                      <input name="nome" placeholder="Ex.: Maria Souza" defaultValue={moradorEditando?.nome ?? ''} required />
+                    </label>
+                    <label>
+                      CPF <small className="ajuda-tooltip">(Opcional)</small>
+                      <input name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" defaultValue={moradorEditando?.cpf ? formatarCPF(moradorEditando.cpf) : ''} required />
+                    </label>
+                    <label>
+                      Data de nascimento
+                      <input name="nascimento" type="date" defaultValue={moradorEditando?.nascimento ?? ''} required />
+                    </label>
+                    <label>
+                      Sexo
+                      <select name="sexo" defaultValue={moradorEditando?.sexo ?? 'Feminino'}>
+                        <option value="Feminino">Feminino</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Outro">Outro</option>
+                      </select>
+                    </label>
+                    <label>
+                      Telefone
+                      <input name="telefone" placeholder="(00) 00000-0000" defaultValue={moradorEditando?.telefone ?? ''} />
+                    </label>
+                    <button type="button" className="primary-button outline" onClick={() => setPassoMorador(2)}>Próximo passo →</button>
+                  </div>
+                )}
+
+                {passoMorador === 2 && (
+                  <div className="form-step animate-in">
+                    <label>
+                      Família/domicílio vinculado
+                      <select name="familiaId" defaultValue={moradorEditando?.familiaId ?? ''} required>
+                        <option value="" disabled>Selecione uma família</option>
+                        {familiasComEndereco.map((item) => (
+                          <option key={item.id} value={item.id}>{item.nome} — {item.endereco}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      CNS <small className="ajuda-tooltip">(Cartão SUS)</small>
+                      <input name="cns" inputMode="numeric" maxLength={15} placeholder="000 0000 0000 0000" defaultValue={moradorEditando?.cns ?? ''} />
+                    </label>
+                    <label>
+                      NIS <small className="ajuda-tooltip">(Bolsa Família)</small>
+                      <input name="nis" inputMode="numeric" maxLength={14} placeholder="Número do NIS" defaultValue={moradorEditando?.nis ?? ''} />
+                    </label>
+                    <div className="two-column-small">
+                      <label>
+                        Peso (kg)
+                        <input name="peso" inputMode="decimal" placeholder="Ex: 70" defaultValue={moradorEditando?.peso ?? ''} />
+                      </label>
+                      <label>
+                        Altura (m)
+                        <input name="altura" inputMode="decimal" placeholder="Ex: 1.75" defaultValue={moradorEditando?.altura ?? ''} />
+                      </label>
+                    </div>
+                    <div className="form-actions-between">
+                      <button type="button" className="secondary-button" onClick={() => setPassoMorador(1)}>← Voltar</button>
+                      <button type="button" className="primary-button outline" onClick={() => setPassoMorador(3)}>Próximo passo →</button>
+                    </div>
+                  </div>
+                )}
+
+                {passoMorador === 3 && (
+                  <div className="form-step animate-in">
+                    <p className="step-hint">Marque as condições de saúde deste morador:</p>
+                    <CheckGrid
+                      items={[
+                        ['hipertenso', 'Hipertenso'],
+                        ['diabetico', 'Diabético'],
+                        ['gestante', 'Gestante'],
+                        ['preNatalEmDia', 'Pré-natal em dia'],
+                        ['bolsaFamilia', 'Bolsa Família'],
+                        ['responsavelFamiliar', 'Responsável familiar'],
+                        ['remedioControlado', 'Remédio controlado'],
+                        ['vacinaEmDia', 'Vacina em dia'],
+                      ]}
+                      values={moradorEditando ?? undefined}
+                    />
+                    <label>
+                      DUM (Data da Última Menstruação)
+                      <input name="dum" type="date" defaultValue={moradorEditando?.dum ?? ''} />
+                    </label>
+                    <label>
+                      Medicamento controlado
+                      <input name="medicamento" placeholder="Nome do medicamento" defaultValue={moradorEditando?.medicamento ?? ''} />
+                    </label>
+                    <label>
+                      Observações gerais
+                      <textarea name="observacoes" placeholder="Outras informações" defaultValue={moradorEditando?.observacoes ?? ''} />
+                    </label>
+                    <div className="form-actions-between">
+                      <button type="button" className="secondary-button" onClick={() => setPassoMorador(2)}>← Voltar</button>
+                      <button className="primary-button">{moradorEditando ? 'Atualizar Morador' : 'Finalizar Cadastro'}</button>
+                    </div>
+                  </div>
+                )}
+                {moradorEditando && (
+                  <div className="form-actions center mt-1">
+                    <button className="secondary-button mini" type="button" onClick={() => setMoradorEditando(null)}>
+                      Cancelar edição
+                    </button>
+                  </div>
+                )}
               </form>
             </CrudCard>
             <div className="stack-list">
@@ -2431,8 +2696,8 @@ function App() {
                   Família visitada
                   <select name="familiaId" defaultValue={visitaEditando?.familiaId ?? ''} required>
                     <option value="" disabled>Selecione uma família</option>
-                    {familias.map((item) => (
-                      <option key={item.id} value={item.id}>{item.nome}</option>
+                    {familiasComEndereco.map((item) => (
+                      <option key={item.id} value={item.id}>{item.nome} — {item.endereco}</option>
                     ))}
                   </select>
                 </label>
@@ -2446,6 +2711,14 @@ function App() {
                 </label>
                 <label>
                   Pessoas encontradas
+                  <div className="chip-suggestions">
+                    {['Responsável', 'Todos', 'Ninguém encontrado'].map(s => (
+                      <button type="button" key={s} className="chip" onClick={(e) => {
+                        const input = (e.currentTarget.parentElement?.nextElementSibling as HTMLInputElement)
+                        if (input) input.value = s
+                      }}>{s}</button>
+                    ))}
+                  </div>
                   <input
                     name="pessoasEncontradas"
                     placeholder="Quem estava na residência"
@@ -2454,6 +2727,17 @@ function App() {
                 </label>
                 <label>
                   Condições acompanhadas
+                  <div className="chip-suggestions">
+                    {['Hipertensão', 'Diabetes', 'Gestante', 'Crianças', 'Vacinas'].map(s => (
+                      <button type="button" key={s} className="chip" onClick={(e) => {
+                        const input = (e.currentTarget.parentElement?.nextElementSibling as HTMLInputElement)
+                        if (input) {
+                          const current = input.value
+                          input.value = current ? `${current}, ${s}` : s
+                        }
+                      }}>{s}</button>
+                    ))}
+                  </div>
                   <input name="condicoes" placeholder="Hipertensão, gestante, criança, idoso..." defaultValue={visitaEditando?.condicoes ?? ''} />
                 </label>
                 <label>
@@ -2604,8 +2888,9 @@ function App() {
                   )}
                 </div>
                 <div className="action-row">
-                  <button className="secondary-button" onClick={exportarPDF}><Download size={17} /> PDF bonito</button>
+                  <button className="secondary-button" onClick={exportarPDF}><Download size={17} /> Relatório Visual</button>
                   <button className="secondary-button" onClick={exportarExcel}><FileSpreadsheet size={17} /> Excel</button>
+                  <button className="primary-button" onClick={exportarFichaAcompanhamento}><FileText size={17} /> Ficha Oficial (3x)</button>
                 </div>
               </section>
 
@@ -2745,8 +3030,18 @@ function App() {
           })}
         </nav>
       </main>
+      <ToastContainer toasts={toasts} />
     </div>
   )
+}
+
+function pendenciaMorador(morador: Partial<Morador> & { idoso?: boolean; crianca?: boolean; statusFamilia?: StatusVisita; vacinaPendente?: boolean }) {
+  const pendencias = []
+  if (morador.statusFamilia === 'atrasada') pendencias.push('Visita atrasada')
+  if (morador.gestante && !morador.preNatalEmDia) pendencias.push('Pré-natal pendente')
+  if (morador.vacinaPendente || !morador.vacinaEmDia) pendencias.push('Vacina pendente')
+  if (morador.hipertenso) pendencias.push('Hipertensão')
+  return pendencias.slice(0, 1).join('') || 'Em dia'
 }
 
 function CrudCard({ title, children }: { title: string; children: ReactNode }) {
@@ -3321,15 +3616,6 @@ function pendenciasVacinais(morador: Morador, registros: VacinaRegistro[]) {
     chaves.add(chave)
     return true
   })
-}
-
-function pendenciaMorador(morador: Partial<Morador> & { idoso?: boolean; crianca?: boolean; statusFamilia?: StatusVisita; vacinaPendente?: boolean }) {
-  const pendencias = []
-  if (morador.statusFamilia === 'atrasada') pendencias.push('Visita atrasada')
-  if (morador.gestante && !morador.preNatalEmDia) pendencias.push('Pré-natal pendente')
-  if (morador.vacinaPendente || !morador.vacinaEmDia) pendencias.push('Vacina pendente')
-  if (morador.hipertenso) pendencias.push('Hipertensão')
-  return pendencias.slice(0, 1).join('') || 'Em dia'
 }
 
 export default App

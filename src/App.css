@@ -902,7 +902,9 @@ textarea:focus {
 .indicator-tabs {
   margin-bottom: 16px;
   overflow-x: auto;
-  scrollbar-width: none;
+}
+.indicator-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .family-head > div:not(.card-actions) {
@@ -1427,8 +1429,9 @@ textarea:focus {
     border: 0;
     border-radius: 0;
     background: transparent;
-    box-shadow: none;
-    scrollbar-width: none;
+  }
+  .priority-strip::-webkit-scrollbar {
+    display: none;
   }
 
   .priority-strip div {
@@ -1758,7 +1761,6 @@ textarea:focus {
     margin-inline: -12px;
     padding-inline: 12px;
     overflow-x: auto;
-    scrollbar-width: none;
   }
 
   .quick-filters::-webkit-scrollbar,
@@ -2097,5 +2099,172 @@ h1, h2, h3, strong {
   }
   .bloqueio-wrapper .bloqueio-educativo {
     padding: 32px 20px;
+  }
+}
+/* Menu Groups */
+.menu-group {
+  margin-bottom: 24px;
+}
+.menu-group-label {
+  padding: 0 16px;
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--slate-400);
+  letter-spacing: 0.1em;
+}
+.sidebar nav button {
+  margin-bottom: 4px;
+}
+
+/* Toast System */
+.toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+.toast {
+  background: white;
+  padding: 14px 20px;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+  color: var(--slate-800);
+  border: 1px solid rgba(0,0,0,0.05);
+  animation: toast-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: auto;
+  min-width: 280px;
+}
+.toast-sucesso { border-left: 5px solid var(--green-600); }
+.toast-erro { border-left: 5px solid #ef4444; }
+.toast-icon { font-size: 1.2rem; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Form Steps */
+.form-steps-nav {
+  display: flex;
+  background: var(--slate-100);
+  padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  gap: 4px;
+}
+.step-dot {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--slate-500);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.step-dot.active {
+  background: white;
+  color: var(--green-700);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.form-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.step-hint {
+  font-size: 0.9rem;
+  color: var(--slate-500);
+  margin-bottom: 8px;
+}
+.form-actions-between {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* Chip Suggestions */
+.chip-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  margin-top: 4px;
+}
+.chip {
+  background: var(--green-50);
+  color: var(--green-700);
+  border: 1px solid var(--green-200);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.chip:hover {
+  background: var(--green-100);
+  border-color: var(--green-300);
+}
+
+/* Utils */
+.center-actions {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0 24px 0;
+}
+.primary-button.outline {
+  background: transparent !important;
+  border: 2px solid var(--green-600) !important;
+  color: var(--green-600) !important;
+}
+.primary-button.outline:hover {
+  background: var(--green-50) !important;
+}
+.mini {
+  padding: 6px 12px !important;
+  font-size: 0.8rem !important;
+  height: auto !important;
+}
+.two-column-small {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.mt-1 {
+  margin-top: 1rem !important;
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    top: auto;
+    bottom: 80px;
+    right: 16px;
+    left: 16px;
+  }
+  .toast {
+    min-width: 0;
+  }
+  .form-steps-nav {
+    overflow-x: auto;
+    padding: 4px;
+  }
+  .step-dot {
+    font-size: 0.75rem;
+    padding: 6px 10px;
   }
 }
