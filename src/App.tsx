@@ -2055,7 +2055,7 @@ function App() {
     doc.save(`acs-ficha-oficial-${isoHoje}.pdf`)
   }
 
-  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: Partial<Morador>[], x: number) {
+  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: any[], x: number) {
     // Título Centralizado
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
@@ -2079,8 +2079,8 @@ function App() {
       return [
         m.nis || '',
         m.cns || '',
-        m.nome.toUpperCase(),
-        formatarData(m.nascimento),
+        (m.nome || '').toUpperCase(),
+        formatarData(m.nascimento || ''),
         m.peso || '',
         m.altura || '',
         m.vacinaEmDia ? 'SIM' : 'NÃO',
