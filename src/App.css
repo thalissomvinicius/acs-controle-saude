@@ -2254,8 +2254,8 @@ h1, h2, h3, strong {
   position: fixed;
   inset: 0;
   background: rgba(13, 63, 37, 0.4);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;

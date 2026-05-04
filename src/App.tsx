@@ -2140,7 +2140,7 @@ function App() {
     })
 
     // Checkboxes - Fonte Pequena
-    const autoTableData = (doc as any).lastAutoTable as { finalY: number }
+    const autoTableData = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable
     const finalY = autoTableData.finalY + 4
     doc.setFontSize(6)
     
