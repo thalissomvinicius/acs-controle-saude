@@ -2045,26 +2045,34 @@ function App() {
       moradoresFiltrados = moradoresDetalhados.filter(m => String(m.logradouroId) === String(relatorioLogradouro))
     }
 
-    // Agrupar em chunks de 6 para caber na tabela da ficha
-    const chunks = []
-    for (let i = 0; i < moradoresFiltrados.length; i += 6) {
-      chunks.push(moradoresFiltrados.slice(i, i + 6))
-    }
+    // Agrupar moradores por família
+    const moradoresPorFamilia: Record<string, any[]> = {}
+    moradoresFiltrados.forEach(m => {
+      const key = String(m.familiaId)
+      if (!moradoresPorFamilia[key]) moradoresPorFamilia[key] = []
+      moradoresPorFamilia[key].push(m)
+    })
 
-    // Se não houver moradores, gera pelo menos uma página com blocos vazios
-    if (chunks.length === 0) chunks.push([])
+    // Transformar em chunks (cada família gera um ou mais blocos de 6)
+    const blocks: any[][] = []
+    Object.values(moradoresPorFamilia).forEach(familiaMoradores => {
+      for (let i = 0; i < familiaMoradores.length; i += 6) {
+        blocks.push(familiaMoradores.slice(i, i + 6))
+      }
+    })
+
+    // Se não houver blocos, gera pelo menos um vazio
+    if (blocks.length === 0) blocks.push([])
 
     // Loop pelas páginas (3 blocos por página)
-    for (let p = 0; p < chunks.length; p += 3) {
+    for (let p = 0; p < blocks.length; p += 3) {
       if (p > 0) doc.addPage()
 
       for (let b = 0; b < 3; b++) {
-        const chunkIndex = p + b
-        // Se não houver dados para o bloco mas for o primeiro da página, desenhamos vazio.
-        // Se b > 0 e não houver dados, paramos.
-        if (chunkIndex >= chunks.length && b > 0) break
+        const blockIndex = p + b
+        if (blockIndex >= blocks.length && b > 0) break
 
-        const moradoresChunk = chunks[chunkIndex] || []
+        const moradoresChunk = blocks[blockIndex] || []
         const yBase = margemY + b * (alturaBloco + espacamentoVertical)
 
         desenharBlocoFicha(doc, yBase, larguraDoc - (margemX * 2), alturaBloco, moradoresChunk, margemX, dataFicha, acsNome, indicesMarcados)
@@ -2084,12 +2092,16 @@ function App() {
     doc.text('FICHA DE ACOMPANHAMENTO', x + largura / 2, y + 6, { align: 'center' })
 
     // Cabeçalho campos
+    const primeiraPessoa = moradores[0]
+    const familiaInfo = primeiraPessoa ? `${primeiraPessoa.familia} - ${primeiraPessoa.endereco}` : '________________________________________________'
+
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
-    doc.text(`DATA DO ACOMPANHAMENTO: ${dataFicha ? formatarData(dataFicha) : '____ / ____ / ______'}`, x, y + 12)
+    doc.text(`DATA DO ACOMPANHAMENTO: ${dataFicha ? formatarData(dataFicha) : '____ / ____ / ______'}`, x, y + 10)
+    doc.text(`FAMÍLIA: ${familiaInfo.toUpperCase()}`, x + largura, y + 10, { align: 'right' })
     
-    doc.text(`NOME DO ACS QUE REALIZOU O ACOMPANHAMENTO: ${acsNome.toUpperCase()}`, x, y + 18)
-    doc.text(`NOME DA UNIDADE DE ABRANGÊNCIA: ${configuracoes.unidadeSaude.toUpperCase()}`, x + largura, y + 18, { align: 'right' })
+    doc.text(`NOME DO ACS QUE REALIZOU O ACOMPANHAMENTO: ${acsNome.toUpperCase()}`, x, y + 15)
+    doc.text(`NOME DA UNIDADE DE ABRANGÊNCIA: ${configuracoes.unidadeSaude.toUpperCase()}`, x + largura, y + 15, { align: 'right' })
 
     // Tabela - 6 linhas exatas
     const colunas = ['NIS', 'CNS', 'NOME COMPLETO DO CIDADÃO', 'D. NASC.', 'PESO', 'ALTURA', 'VACINAÇÃO?', 'GESTANTE?', 'DUM', 'PRÉ-NATAL?']
