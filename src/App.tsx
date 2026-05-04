@@ -689,6 +689,29 @@ function statusTexto(status: StatusVisita | StatusRegistro | StatusVacina) {
   return mapa[status]
 }
 
+
+function EmptyStateEducativo({ titulo, texto, botaoTexto, onClick }: { titulo: string, texto: string, botaoTexto?: string, onClick?: () => void }) {
+  return (
+    <div className="empty-state-didatico">
+      <div className="empty-icon">💡</div>
+      <h3>{titulo}</h3>
+      <p>{texto}</p>
+      {botaoTexto && onClick && <button type="button" className="primary-button" onClick={onClick}>{botaoTexto}</button>}
+    </div>
+  )
+}
+
+function BloqueioEducativo({ titulo, texto, botaoTexto, onClick }: { titulo: string, texto: string, botaoTexto: string, onClick: () => void }) {
+  return (
+    <div className="bloqueio-educativo">
+      <div className="bloqueio-icon">🚧</div>
+      <h3>{titulo}</h3>
+      <p>{texto}</p>
+      <button type="button" className="primary-button" onClick={onClick}>{botaoTexto}</button>
+    </div>
+  )
+}
+
 function App() {
   const [logado, setLogado] = useState(false)
   const [carregando, setCarregando] = useState(supabaseConfigurado)
@@ -2066,7 +2089,32 @@ function App() {
           </div>
         </header>
 
-        {tela === 'dashboard' && (
+        
+          {tela === 'dashboard' && logradouros.length === 0 && familias.length === 0 && (
+            <section className="trilha-sucesso card">
+              <h2>👋 Bem-vindo ao ACS Controle Saúde!</h2>
+              <p>Vamos preparar o seu ambiente de trabalho passo a passo:</p>
+              <div className="trilha-passos">
+                <div className="passo pendente">
+                  <span className="passo-numero">1</span>
+                  <div className="passo-texto">
+                    <strong>Cadastre suas Ruas</strong>
+                    <small>Adicione os logradouros (ruas, avenidas) que fazem parte da sua microárea.</small>
+                    <button type="button" className="primary-button outline" onClick={() => navegarPara('logradouros')}>Ir para Logradouros</button>
+                  </div>
+                </div>
+                <div className="passo pendente bloqueado">
+                  <span className="passo-numero">2</span>
+                  <div className="passo-texto">
+                    <strong>Cadastre as Famílias</strong>
+                    <small>Após cadastrar as ruas, você poderá adicionar as famílias e os moradores nelas.</small>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {tela === 'dashboard' && (
           <section className="screen animate-in">
             <div className="screen-title">
               <div>
@@ -2169,7 +2217,10 @@ function App() {
           </section>
         )}
 
-        {tela === 'familias' && (
+        {tela === 'familias' && logradouros.length === 0 && (
+            <BloqueioEducativo titulo="Ops! Faltam Logradouros" texto="Você não pode cadastrar uma família sem ter logradouros. Cadastre pelo menos uma rua primeiro." botaoTexto="Ir para Logradouros" onClick={() => navegarPara('logradouros')} />
+          )}
+          {tela === 'familias' && logradouros.length > 0 && (
           <section className="screen two-column animate-in">
             <CrudCard title={familiaEditando ? 'Editar Família' : 'Nova Família'}>
               <form className="form-grid" onSubmit={adicionarFamilia} key={familiaEditando?.id ?? 'nova-familia'}>
@@ -2254,15 +2305,15 @@ function App() {
                   <input name="nome" placeholder="Ex.: Maria Souza" defaultValue={moradorEditando?.nome ?? ''} required />
                 </label>
                 <label>
-                  CPF
+                  CPF <small className="ajuda-tooltip">(Opcional, ajuda a evitar duplicidade no e-SUS)</small>
                   <input name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" defaultValue={moradorEditando?.cpf ? formatarCPF(moradorEditando.cpf) : ''} required />
                 </label>
                 <label>
-                  CNS
+                  CNS <small className="ajuda-tooltip">(Cartão Nacional de Saúde)</small>
                   <input name="cns" inputMode="numeric" maxLength={15} placeholder="Cartão Nacional de Saúde" defaultValue={moradorEditando?.cns ?? ''} />
                 </label>
                 <label>
-                  NIS
+                  NIS <small className="ajuda-tooltip">(Essencial se participa do Bolsa Família)</small>
                   <input name="nis" inputMode="numeric" maxLength={14} placeholder="Número de Identificação Social" defaultValue={moradorEditando?.nis ?? ''} />
                 </label>
                 <label>
@@ -2709,7 +2760,7 @@ function ListaFamilias({
     <section className="panel">
       <h2>{titulo}</h2>
       <div className="stack-list">
-        {familias.length === 0 && <p className="empty-state">Nenhum registro encontrado.</p>}
+        {familias.length === 0 && <EmptyStateEducativo titulo="Nenhuma família cadastrada" texto="Você ainda não possui famílias ou a busca não encontrou resultados." />}
         {familias.map((familia) => (
           <article key={familia.id} className="family-card">
             <div className="family-head">
@@ -2764,7 +2815,7 @@ function ListaMoradores({
     <section className="panel">
       <h2>{titulo}</h2>
       <div className="stack-list">
-        {moradores.length === 0 && <p className="empty-state">Nenhum registro encontrado.</p>}
+        {moradores.length === 0 && <EmptyStateEducativo titulo="Nenhum morador encontrado" texto="Adicione moradores para compor as famílias cadastradas." />}
         {moradores.map((morador) => (
           <article key={morador.id} className="family-card">
             <div className="family-head">
@@ -2971,7 +3022,7 @@ function ListaIndicador({
 }) {
   return (
     <div className="indicator-list">
-      {moradores.length === 0 && <p className="empty-state">Nenhum registro encontrado.</p>}
+      {moradores.length === 0 && <EmptyStateEducativo titulo="Nenhum morador encontrado" texto="Adicione moradores para compor as famílias cadastradas." />}
       {moradores.map((morador) => (
         <article key={morador.id} className="indicator-card">
           <div>
@@ -3092,7 +3143,7 @@ function ListaVisitas({
         </label>
       </div>
       <div className="stack-list">
-        {visitasFiltradas.length === 0 && <p className="empty-state">Nenhuma visita encontrada.</p>}
+        {visitasFiltradas.length === 0 && <EmptyStateEducativo titulo="Sem histórico de visitas" texto="O painel de visitas está vazio ou a busca não encontrou resultados." />}
         {visitasFiltradas.map((visita) => (
           <article key={visita.id} className="visit-card">
             <div className="visit-card-head">
