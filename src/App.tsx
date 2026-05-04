@@ -441,6 +441,18 @@ const gruposIndicadores = [
   'Visitas pendentes',
 ]
 
+const OPCOES_FICHA_CHECKBOXES = [
+  'CONDIÇÕES DE SAÚDE QUE IMPEDEM A IDA À UBS.',
+  'FATOS QUE IMPEDEM OS DESLOCAMENTOS À UBS, COMO ENCHENTES, FALTA DE TRANSPORTE, ETC.',
+  'HORÁRIO DE ATENDIMENTO NA UBS INVIÁVEL.',
+  'NÃO CUMPRIU AS CONDICIONALIDADES POR QUESTÕES SOCIAIS, CULTURAIS, ÉTNICAS OU RELIGIOSAS.',
+  'HOUVE RECUSA EM REALIZAR O ACOMPANHAMENTO DENTRO DA ROTINA DE ATENÇÃO BÁSICA EM SAÚDE.',
+  'INDÍCIOS DE SITUAÇÃO DE RISCO SOCIAL COMO NEGLIGÊNCIA, ABUSO SEXUAL, VIOLÊNCIA.',
+  'RESPONSÁVEL AFIRMA QUE NÃO FAZ MAIS PARTE DO PROGRAMA.',
+  'CRIANÇA COM CONDIÇÃO ESPECÍFICA DE SAÚDE QUE NECESSITA DE VACINA ESPECIAL (CRIE).',
+  'FALTA DE OFERTA DE VACINA OU DE INSUMOS NECESSÁRIOS PARA VACINAÇÃO: SERINGAS, ETC.'
+]
+
 function calcularIdade(nascimento: string) {
   const data = new Date(`${nascimento}T00:00:00`)
   let idade = hoje.getFullYear() - data.getFullYear()
@@ -786,6 +798,12 @@ function App() {
   const [visitas, setVisitas] = usePersistentState('acs:visitas', visitasIniciais)
   const [vacinas, setVacinas] = usePersistentState('acs:vacinas', vacinasIniciais)
   const [configuracoes, setConfiguracoes] = usePersistentState('acs:configuracoes', configuracoesIniciais)
+  const [modalFichaAberta, setModalFichaAberta] = useState(false)
+  const [opcoesFicha, setOpcoesFicha] = useState({
+    data: isoHoje,
+    acsNome: 'Adriellen Guimarães',
+    indicesMarcados: [] as number[]
+  })
   const [configuracoesSalvas, setConfiguracoesSalvas] = useState('')
   const [mensagemConfiguracoes, setMensagemConfiguracoes] = useState('')
   const [novaSenha, setNovaSenha] = useState('')
@@ -2018,6 +2036,7 @@ function App() {
     const margemX = 10
     const margemY = 8
     const espacamentoVertical = 4
+    const { data: dataFicha, acsNome, indicesMarcados } = opcoesFicha
     const alturaBloco = (alturaDoc - (margemY * 2) - (espacamentoVertical * 2)) / 3
 
     // Filtrar moradores baseado no filtro de logradouro selecionado
@@ -2048,14 +2067,15 @@ function App() {
         const moradoresChunk = chunks[chunkIndex] || []
         const yBase = margemY + b * (alturaBloco + espacamentoVertical)
 
-        desenharBlocoFicha(doc, yBase, larguraDoc - (margemX * 2), alturaBloco, moradoresChunk, margemX)
+        desenharBlocoFicha(doc, yBase, larguraDoc - (margemX * 2), alturaBloco, moradoresChunk, margemX, dataFicha, acsNome, indicesMarcados)
       }
     }
 
     doc.save(`acs-ficha-oficial-${isoHoje}.pdf`)
+    setModalFichaAberta(false)
   }
 
-  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: any[], x: number) {
+  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: any[], x: number, dataFicha: string, acsNome: string, indicesMarcados: number[]) {
     // Título Centralizado
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
@@ -2066,9 +2086,9 @@ function App() {
     // Cabeçalho campos
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
-    doc.text(`DATA DO ACOMPANHAMENTO: ____ / ____ / ______`, x, y + 12)
+    doc.text(`DATA DO ACOMPANHAMENTO: ${dataFicha ? formatarData(dataFicha) : '____ / ____ / ______'}`, x, y + 12)
     
-    doc.text(`NOME DO ACS QUE REALIZOU O ACOMPANHAMENTO: _________________________________________________`, x, y + 18)
+    doc.text(`NOME DO ACS QUE REALIZOU O ACOMPANHAMENTO: ${acsNome.toUpperCase()}`, x, y + 18)
     doc.text(`NOME DA UNIDADE DE ABRANGÊNCIA: ${configuracoes.unidadeSaude.toUpperCase()}`, x + largura, y + 18, { align: 'right' })
 
     // Tabela - 6 linhas exatas
@@ -2136,13 +2156,19 @@ function App() {
       'FALTA DE OFERTA DE VACINA OU DE INSUMOS NECESSÁRIOS PARA VACINAÇÃO: SERINGAS, ETC.'
     ]
 
-    checkboxes.forEach((txt, idx) => {
+    OPCOES_FICHA_CHECKBOXES.forEach((txt, idx) => {
       const col = idx % 2
       const row = Math.floor(idx / 2)
       const xPos = x + (col * (largura / 2))
       const yPos = finalY + (row * 3.5)
       
+      const marcado = indicesMarcados.includes(idx)
+      
       doc.rect(xPos, yPos - 2, 2.5, 2.5) // Quadradinho
+      if (marcado) {
+        doc.line(xPos, yPos - 2, xPos + 2.5, yPos + 0.5)
+        doc.line(xPos + 2.5, yPos - 2, xPos, yPos + 0.5)
+      }
       doc.text(txt, xPos + 4, yPos - 0.2)
     })
     
@@ -2890,7 +2916,7 @@ function App() {
                 <div className="action-row">
                   <button className="secondary-button" onClick={exportarPDF}><Download size={17} /> Relatório Visual</button>
                   <button className="secondary-button" onClick={exportarExcel}><FileSpreadsheet size={17} /> Excel</button>
-                  <button className="primary-button" onClick={exportarFichaAcompanhamento}><FileText size={17} /> Ficha Oficial (3x)</button>
+                  <button className="primary-button" onClick={() => setModalFichaAberta(true)}><FileText size={17} /> Ficha Oficial (3x)</button>
                 </div>
               </section>
 
@@ -3030,6 +3056,53 @@ function App() {
           })}
         </nav>
       </main>
+
+      {modalFichaAberta && (
+        <div className="modal-overlay">
+          <div className="modal-card animate-in">
+            <header className="modal-header">
+              <h2>Opções da Ficha Oficial</h2>
+              <button className="icon-button" onClick={() => setModalFichaAberta(false)}><X /></button>
+            </header>
+            <div className="modal-body">
+              <div className="form-grid">
+                <label>
+                  Data do acompanhamento
+                  <input type="date" value={opcoesFicha.data} onChange={e => setOpcoesFicha({...opcoesFicha, data: e.target.value})} />
+                </label>
+                <label>
+                  Nome do ACS
+                  <input placeholder="Nome completo" value={opcoesFicha.acsNome} onChange={e => setOpcoesFicha({...opcoesFicha, acsNome: e.target.value})} />
+                </label>
+              </div>
+              
+              <div className="checkbox-options-list">
+                <p><strong>Condicionalidades a serem marcadas:</strong></p>
+                {OPCOES_FICHA_CHECKBOXES.map((label, idx) => (
+                  <label key={idx} className="check-item">
+                    <input 
+                      type="checkbox" 
+                      checked={opcoesFicha.indicesMarcados.includes(idx)} 
+                      onChange={(e) => {
+                        const next = e.target.checked 
+                          ? [...opcoesFicha.indicesMarcados, idx]
+                          : opcoesFicha.indicesMarcados.filter(i => i !== idx)
+                        setOpcoesFicha({...opcoesFicha, indicesMarcados: next})
+                      }}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <footer className="modal-footer">
+              <button className="secondary-button" onClick={() => setModalFichaAberta(false)}>Cancelar</button>
+              <button className="primary-button" onClick={exportarFichaAcompanhamento}>Gerar PDF Agora</button>
+            </footer>
+          </div>
+        </div>
+      )}
+
       <ToastContainer toasts={toasts} />
     </div>
   )
