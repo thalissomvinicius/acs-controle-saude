@@ -98,6 +98,19 @@ type Morador = {
   observacoes: string
 }
 
+type MoradorDetalhado = Morador & {
+  idade: number
+  crianca: boolean
+  idoso: boolean
+  vacinaPendente: boolean
+  totalVacinasPendentes: number
+  familia: string
+  endereco: string
+  ultimaVisita: string
+  logradouroId: EntityId
+  statusFamilia: StatusRegistro
+}
+
 type Visita = {
   id: EntityId
   familiaId: EntityId
@@ -1157,7 +1170,7 @@ function App() {
     [configuracoes.diasParaVisitaAtrasada, familias, logradouros],
   )
 
-  const moradoresDetalhados = useMemo(
+  const moradoresDetalhados = useMemo<MoradorDetalhado[]>(
     () =>
       moradores.map((morador) => {
         const familia = familiasComEndereco.find((item) => String(item.id) === String(morador.familiaId))
@@ -1175,8 +1188,8 @@ function App() {
           endereco: familia?.endereco ?? '',
           ultimaVisita: familia?.ultimaVisita ?? '',
           logradouroId: familia?.logradouroId ?? '',
-          statusFamilia: familia?.status ?? 'pendente',
-        }
+          statusFamilia: (familia?.status as StatusRegistro) ?? 'pendente',
+        } as MoradorDetalhado
       }),
     [moradores, familiasComEndereco, vacinas],
   )
@@ -1328,7 +1341,7 @@ function App() {
         return { ...vacina, morador, familia }
       })
       .filter((vacina) => {
-        const logradouroOk = !relatorioLogradouro || String(vacina.familia?.logradouroId) === String(relatorioLogradouro)
+        const logradouroOk = !relatorioLogradouro || String(vacina.morador?.logradouroId) === String(relatorioLogradouro)
         const inicioOk = !relatorioInicio || (vacina.dataPrevista || vacina.dataAplicacao) >= relatorioInicio
         const fimOk = !relatorioFim || (vacina.dataPrevista || vacina.dataAplicacao) <= relatorioFim
         const statusOk = !relatorioStatus || vacina.status === relatorioStatus
