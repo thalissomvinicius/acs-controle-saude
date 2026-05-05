@@ -24,6 +24,7 @@ import {
   Trash2,
   UserRound,
   UsersRound,
+  TrendingUp,
   X,
 } from 'lucide-react'
 import jsPDF from 'jspdf'
@@ -3421,6 +3422,7 @@ function ListaMoradores({
   onEdit,
   onDelete,
   onVaccines,
+  onViewHistory,
 }: {
   moradores: (Morador & { idade: number; crianca: boolean; idoso: boolean; familia: string; endereco: string; vacinaPendente?: boolean; totalVacinasPendentes?: number })[]
   titulo: string
