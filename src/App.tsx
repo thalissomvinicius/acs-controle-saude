@@ -2215,7 +2215,7 @@ function App() {
     doc.setLineWidth(0.3)
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(11)
-    doc.text('FICHA DE ACOMPANHAMENTO', x + largura / 2, y + 6, { align: 'center' })
+    doc.text('FICHA DE ACOMPANHAMENTO', x + largura / 2, y + 5, { align: 'center' })
 
     // Cabeçalho campos
     const primeiraPessoa = moradores[0]
@@ -2223,11 +2223,11 @@ function App() {
 
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
-    doc.text(`DATA DO ACOMPANHAMENTO: ${dataFicha ? formatarData(dataFicha) : '____ / ____ / ______'}`, x, y + 10)
-    doc.text(`FAMÍLIA: ${familiaInfo.toUpperCase()}`, x + largura, y + 10, { align: 'right' })
+    doc.text(`DATA DO ACOMPANHAMENTO: ${dataFicha ? formatarData(dataFicha) : '____ / ____ / ______'}`, x, y + 9)
+    doc.text(`FAMÍLIA: ${familiaInfo.toUpperCase()}`, x + largura, y + 9, { align: 'right' })
     
-    doc.text(`NOME DO ACS QUE REALIZOU O ACOMPANHAMENTO: ${acsNome.toUpperCase()}`, x, y + 15)
-    doc.text(`NOME DA UNIDADE DE ABRANGÊNCIA: ${configuracoes.unidadeSaude.toUpperCase()}`, x + largura, y + 15, { align: 'right' })
+    doc.text(`NOME DO ACS QUE REALIZOU O ACOMPANHAMENTO: ${acsNome.toUpperCase()}`, x, y + 13)
+    doc.text(`NOME DA UNIDADE DE ABRANGÊNCIA: ${configuracoes.unidadeSaude.toUpperCase()}`, x + largura, y + 13, { align: 'right' })
 
     // Tabela - 6 linhas exatas
     const colunas = ['NIS', 'CNS', 'NOME COMPLETO DO CIDADÃO', 'D. NASC.', 'PESO', 'ALTURA', 'VACINAÇÃO?', 'GESTANTE?', 'DUM', 'PRÉ-NATAL?']
@@ -2251,13 +2251,13 @@ function App() {
     autoTable(doc, {
       head: [colunas],
       body: rows,
-      startY: y + 21,
+      startY: y + 17,
       margin: { left: x },
       tableWidth: largura,
       theme: 'grid',
       styles: {
         fontSize: 6.5,
-        cellPadding: 1.5,
+        cellPadding: 1.0,
         lineColor: [0, 0, 0],
         lineWidth: 0.1,
         textColor: [0, 0, 0],
@@ -2279,21 +2279,21 @@ function App() {
 
     // Checkboxes - Fonte Pequena
     const autoTableData = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable
-    const finalY = autoTableData.finalY + 4
+    const finalY = autoTableData.finalY + 3
     doc.setFontSize(6)
     
     OPCOES_FICHA_CHECKBOXES.forEach((txt, idx) => {
       const col = idx % 2
       const row = Math.floor(idx / 2)
       const xPos = x + (col * (largura / 2))
-      const yPos = finalY + (row * 3.5)
+      const yPos = finalY + (row * 3.2)
       
       const marcado = indicesMarcados.includes(idx)
       
-      doc.rect(xPos, yPos - 2, 2.5, 2.5) // Quadradinho
+      doc.rect(xPos, yPos - 2, 2.2, 2.2) // Quadradinho ligeiramente menor
       if (marcado) {
-        doc.line(xPos, yPos - 2, xPos + 2.5, yPos + 0.5)
-        doc.line(xPos + 2.5, yPos - 2, xPos, yPos + 0.5)
+        doc.line(xPos, yPos - 2, xPos + 2.2, yPos + 0.2)
+        doc.line(xPos + 2.2, yPos - 2, xPos, yPos + 0.2)
       }
       doc.text(txt, xPos + 4, yPos - 0.2)
     })
