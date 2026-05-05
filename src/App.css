@@ -2357,3 +2357,30 @@ h1, h2, h3, strong {
     padding: 6px 10px;
   }
 }
+
+.modal-large {
+  max-width: 800px;
+  width: 95%;
+}
+
+.familia-check-title {
+  margin: 10px 0 5px 0;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 5px;
+  color: var(--green-600);
+  font-weight: 600;
+}
+
+.checkbox-grid-mini {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.check-label-mini {
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}

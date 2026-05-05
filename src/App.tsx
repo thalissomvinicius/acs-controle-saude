@@ -1065,12 +1065,6 @@ function App() {
     if (error) console.warn('Não foi possível sincronizar perfil do usuário:', error.message)
   }, [configuracoes.microarea, configuracoes.unidadeSaude])
 
-  useEffect(() => {
-    if (configuracoes.unidadeSaude && !opcoesFicha.unidadeSaude) {
-      setOpcoesFicha(prev => ({ ...prev, unidadeSaude: configuracoes.unidadeSaude }))
-    }
-  }, [configuracoes.unidadeSaude, opcoesFicha.unidadeSaude])
-
   const carregarDados = useCallback(async (userIdAtual: string) => {
     if (!supabase) return
     const [logradourosDb, familiasDb, moradoresDb, visitasDb, medicamentosDb] = await Promise.all([
@@ -1102,7 +1096,9 @@ function App() {
     // Configuracoes — tabela pode ainda não existir no banco
     const configuracoesDb = await supabase.from('configuracoes').select('*').eq('usuario_id', userIdAtual).maybeSingle()
     if (configuracoesDb.data) {
-      setConfiguracoes(mapConfiguracoes(configuracoesDb.data))
+      const config = mapConfiguracoes(configuracoesDb.data)
+      setConfiguracoes(config)
+      setOpcoesFicha(prev => ({ ...prev, unidadeSaude: prev.unidadeSaude || config.unidadeSaude }))
     } else if (configuracoesDb.error) {
       console.warn('Tabela configuracoes não encontrada:', configuracoesDb.error.message)
     }
@@ -3220,7 +3216,7 @@ function App() {
 
       {modalFichaAberta && (
         <div className="modal-overlay">
-          <div className="modal-card animate-in" style={{ maxWidth: '800px', width: '95%' }}>
+          <div className="modal-card animate-in modal-large">
             <header className="modal-header">
               <h2>Opções da Ficha Oficial {passoFicha === 2 && '- Condicionalidades'}</h2>
               <button className="icon-button" onClick={() => { setModalFichaAberta(false); setPassoFicha(1); }} title="Fechar"><X /></button>
@@ -3257,12 +3253,12 @@ function App() {
 
                       return famsNoRelatorio.map(fam => (
                         <div key={fam.id} className="familia-check-section">
-                          <h4 style={{ margin: '10px 0 5px 0', borderBottom: '1px solid #eee', paddingBottom: '5px', color: '#1f7a43' }}>
+                          <h4 className="familia-check-title">
                             Família: {fam.nome} - {fam.endereco}
                           </h4>
-                          <div className="checkbox-grid-mini" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                          <div className="checkbox-grid-mini">
                             {OPCOES_FICHA_CHECKBOXES.map((txt, idx) => (
-                              <label key={idx} style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                              <label key={idx} className="check-label-mini">
                                 <input 
                                   type="checkbox"
                                   checked={(opcoesFicha.indicesPorFamilia[String(fam.id)] || []).includes(idx)}
