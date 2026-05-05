@@ -2223,7 +2223,7 @@ function App() {
         const familiaId = moradoresChunk[0]?.familiaId ? String(moradoresChunk[0].familiaId) : 'vazio'
         const marcadosDestaFamilia = indicesPorFamilia[familiaId] || []
 
-        desenharBlocoFicha(doc, yBase, larguraDoc - (margemX * 2), alturaBloco, moradoresChunk, margemX, dataFicha, acsNome, unidadeSaude, marcadosDestaFamilia)
+        desenharBlocoFicha(doc, yBase, larguraDoc - (margemX * 2), moradoresChunk, margemX, dataFicha, acsNome, unidadeSaude, marcadosDestaFamilia)
       }
     }
 
@@ -2231,7 +2231,7 @@ function App() {
     setModalFichaAberta(false)
   }
 
-  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: (MoradorDetalhado)[], x: number, dataFicha: string, acsNome: string, unidadeSaudeManual: string, indicesMarcados: number[]) {
+  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, moradores: (MoradorDetalhado)[], x: number, dataFicha: string, acsNome: string, unidadeSaudeManual: string, indicesMarcados: number[]) {
     // Título Centralizado
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
