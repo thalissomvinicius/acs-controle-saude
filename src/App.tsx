@@ -1063,6 +1063,8 @@ function App() {
 
     const { error } = await supabase.from('usuarios').upsert(perfil, { onConflict: 'id' })
     if (error) console.warn('Não foi possível sincronizar perfil do usuário:', error.message)
+  }, [configuracoes.microarea, configuracoes.unidadeSaude])
+
   useEffect(() => {
     if (configuracoes.unidadeSaude && !opcoesFicha.unidadeSaude) {
       setOpcoesFicha(prev => ({ ...prev, unidadeSaude: configuracoes.unidadeSaude }))
