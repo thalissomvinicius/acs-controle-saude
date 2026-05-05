@@ -1051,16 +1051,15 @@ function App() {
 
   const carregarDados = useCallback(async (userIdAtual: string) => {
     if (!supabase) return
-    const [logradourosDb, familiasDb, moradoresDb, visitasDb, medicamentosDb, configuracoesDb] = await Promise.all([
+    const [logradourosDb, familiasDb, moradoresDb, visitasDb, medicamentosDb] = await Promise.all([
       supabase.from('logradouros').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
       supabase.from('familias').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
-      supabase.from('moradores').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
+      supabase.from('moradores').select('id,familia_id,nome_completo,cpf,cns,nis,data_nascimento,sexo,telefone,peso,altura,responsavel_familiar,participa_bolsa_familia,gestante,pre_natal_em_dia,hipertenso,diabetico,usa_remedio_controlado,vacina_em_dia,observacoes_gerais,criado_em').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
       supabase.from('visitas').select('*').eq('usuario_id', userIdAtual).order('data_visita', { ascending: false }),
       supabase.from('medicamentos').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
-      supabase.from('configuracoes').select('*').eq('usuario_id', userIdAtual).maybeSingle(),
     ])
 
-    const erro = logradourosDb.error || familiasDb.error || moradoresDb.error || visitasDb.error || medicamentosDb.error || configuracoesDb.error
+    const erro = logradourosDb.error || familiasDb.error || moradoresDb.error || visitasDb.error || medicamentosDb.error
     if (erro) throw erro
 
     const medicamentosPorMorador = new Map<string, string[]>()
@@ -1077,8 +1076,13 @@ function App() {
       return mapeado
     }))
     setVisitas((visitasDb.data ?? []).map(mapVisita))
+
+    // Configuracoes — tabela pode ainda não existir no banco
+    const configuracoesDb = await supabase.from('configuracoes').select('*').eq('usuario_id', userIdAtual).maybeSingle()
     if (configuracoesDb.data) {
       setConfiguracoes(mapConfiguracoes(configuracoesDb.data))
+    } else if (configuracoesDb.error) {
+      console.warn('Tabela configuracoes não encontrada:', configuracoesDb.error.message)
     }
 
     const vacinasDb = await supabase
@@ -1736,7 +1740,7 @@ function App() {
         usa_remedio_controlado: novo.remedioControlado,
         vacina_em_dia: novo.vacinaEmDia,
         observacoes_gerais: novo.observacoes,
-        dum: novo.dum,
+        // dum sera adicionado aqui apos executar a migration SQL no Supabase
       }
       const query = moradorEditando
         ? supabase.from('moradores').update(payload).eq('id', moradorEditando.id).select().single()
