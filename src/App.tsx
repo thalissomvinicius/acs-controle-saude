@@ -50,8 +50,8 @@ type HistoricoSaude = {
   id: EntityId
   moradorId: EntityId
   data: string
-  peso: number | ''
-  altura: number | ''
+  peso: string
+  altura: string
   dum: string
   observacoes: string
 }
@@ -135,16 +135,6 @@ type Visita = {
   observacoes: string
   proximaVisita: string
   status: StatusRegistro
-}
-
-type HistoricoSaude = {
-  id: EntityId
-  moradorId: EntityId
-  data: string
-  peso: number | ''
-  altura: number | ''
-  dum: string
-  observacoes: string
 }
 
 type VacinaRegistro = {
@@ -1702,20 +1692,17 @@ function App() {
     const form = event.currentTarget
     const dados = new FormData(form)
     const cpf = apenasDigitos(String(dados.get('cpf')))
-    const cns = apenasDigitos(String(dados.get('cns')))
-    const nis = apenasDigitos(String(dados.get('nis')))
-    const peso = normalizarNumeroDecimal(String(dados.get('peso')))
-    const altura = normalizarNumeroDecimal(String(dados.get('altura')))
+    const cns = String(dados.get('cns')).replace(/\D/g, '')
+    const nis = String(dados.get('nis')).replace(/\D/g, '')
+    const pesoRaw = String(dados.get('peso')).replace(',', '.')
+    const alturaRaw = String(dados.get('altura')).replace(',', '.')
+    const peso = Number(pesoRaw)
+    const altura = Number(alturaRaw)
 
-    if (cpf.length !== 11) {
+    if (cpf.length > 0 && cpf.length !== 11) {
       alert('Informe um CPF com 11 dígitos.')
       return
     }
-
-    const cns = String(dados.get('cns')).replace(/\D/g, '')
-    const nis = String(dados.get('nis')).replace(/\D/g, '')
-    const peso = Number(String(dados.get('peso')).replace(',', '.'))
-    const altura = Number(String(dados.get('altura')).replace(',', '.'))
 
     if (cns && cns.length !== 15) {
       alert('Informe um CNS com 15 dígitos ou deixe em branco.')
