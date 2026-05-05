@@ -108,7 +108,7 @@ type MoradorDetalhado = Morador & {
   endereco: string
   ultimaVisita: string
   logradouroId: EntityId
-  statusFamilia: StatusRegistro
+  statusFamilia: StatusVisita
 }
 
 type Visita = {
@@ -1188,7 +1188,7 @@ function App() {
           endereco: familia?.endereco ?? '',
           ultimaVisita: familia?.ultimaVisita ?? '',
           logradouroId: familia?.logradouroId ?? '',
-          statusFamilia: (familia?.status as StatusRegistro) ?? 'pendente',
+          statusFamilia: (familia?.status as StatusVisita) ?? 'pendente',
         } as MoradorDetalhado
       }),
     [moradores, familiasComEndereco, vacinas],
