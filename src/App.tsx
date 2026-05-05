@@ -730,13 +730,6 @@ function formatarCPF(cpf: string) {
   return limpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
 }
 
-function normalizarNumeroDecimal(valor: string) {
-  const limpo = valor.trim().replace(',', '.')
-  if (!limpo) return ''
-  const numero = Number(limpo)
-  return Number.isFinite(numero) ? String(numero) : ''
-}
-
 function baixarArquivo(nome: string, conteudo: BlobPart, tipo: string) {
   const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }))
   const link = document.createElement('a')
@@ -1737,8 +1730,8 @@ function App() {
       nascimento: String(dados.get('nascimento')),
       sexo: String(dados.get('sexo')),
       telefone: String(dados.get('telefone')),
-      peso,
-      altura,
+      peso: pesoRaw,
+      altura: alturaRaw,
       responsavelFamiliar: dados.get('responsavelFamiliar') === 'on',
       bolsaFamilia: dados.get('bolsaFamilia') === 'on',
       gestante: dados.get('gestante') === 'on',
