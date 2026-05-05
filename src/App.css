@@ -2411,3 +2411,42 @@ h1, h2, h3, strong {
   height: 16px;
   margin-top: 3px;
 }
+
+/* History Evolution */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.history-item {
+  background: var(--slate-50);
+  border: 1px solid var(--line);
+  padding: 12px 16px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.history-item:hover {
+  border-color: var(--green-200);
+  background: var(--green-50);
+}
+
+.history-item span:first-child {
+  font-weight: 700;
+  color: var(--green-800);
+  font-size: 0.9rem;
+}
+
+.history-item span:last-child {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--slate-600);
+}

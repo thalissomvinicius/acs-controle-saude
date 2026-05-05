@@ -45,6 +45,17 @@ type Tela =
   | 'relatorios'
   | 'configuracoes'
 type ModoAuth = 'entrar' | 'cadastro' | 'recuperar'
+
+type HistoricoSaude = {
+  id: EntityId
+  moradorId: EntityId
+  data: string
+  peso: number | ''
+  altura: number | ''
+  dum: string
+  observacoes: string
+}
+
 type TipoRelatorio = 'indicadores' | 'familias' | 'visitas' | 'vacinas'
 
 type EntityId = string | number
@@ -124,6 +135,16 @@ type Visita = {
   observacoes: string
   proximaVisita: string
   status: StatusRegistro
+}
+
+type HistoricoSaude = {
+  id: EntityId
+  moradorId: EntityId
+  data: string
+  peso: number | ''
+  altura: number | ''
+  dum: string
+  observacoes: string
 }
 
 type VacinaRegistro = {
@@ -931,6 +952,7 @@ function App() {
   const [moradores, setMoradores] = usePersistentState('acs:moradores', moradoresIniciais)
   const [visitas, setVisitas] = usePersistentState('acs:visitas', visitasIniciais)
   const [vacinas, setVacinas] = usePersistentState('acs:vacinas', vacinasIniciais)
+  const [historicoSaude, setHistoricoSaude] = useState<HistoricoSaude[]>([])
   const [configuracoes, setConfiguracoes] = usePersistentState('acs:configuracoes', configuracoesIniciais)
   const [modalFichaAberta, setModalFichaAberta] = useState(false)
   const [opcoesFicha, setOpcoesFicha] = useState({
@@ -1067,15 +1089,16 @@ function App() {
 
   const carregarDados = useCallback(async (userIdAtual: string) => {
     if (!supabase) return
-    const [logradourosDb, familiasDb, moradoresDb, visitasDb, medicamentosDb] = await Promise.all([
+    const [logradourosDb, familiasDb, moradoresDb, visitasDb, medicamentosDb, historicoSaudeDb] = await Promise.all([
       supabase.from('logradouros').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
       supabase.from('familias').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
       supabase.from('moradores').select('id,familia_id,nome_completo,cpf,cns,nis,data_nascimento,sexo,telefone,peso,altura,responsavel_familiar,participa_bolsa_familia,gestante,pre_natal_em_dia,hipertenso,diabetico,usa_remedio_controlado,vacina_em_dia,observacoes_gerais,criado_em').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
       supabase.from('visitas').select('*').eq('usuario_id', userIdAtual).order('data_visita', { ascending: false }),
       supabase.from('medicamentos').select('*').eq('usuario_id', userIdAtual).order('criado_em', { ascending: true }),
+      supabase.from('historico_saude').select('*').eq('usuario_id', userIdAtual).order('data', { ascending: false }),
     ])
 
-    const erro = logradourosDb.error || familiasDb.error || moradoresDb.error || visitasDb.error || medicamentosDb.error
+    const erro = logradourosDb.error || familiasDb.error || moradoresDb.error || visitasDb.error || medicamentosDb.error || historicoSaudeDb.error
     if (erro) throw erro
 
     const medicamentosPorMorador = new Map<string, string[]>()
@@ -1092,6 +1115,15 @@ function App() {
       return mapeado
     }))
     setVisitas((visitasDb.data ?? []).map(mapVisita))
+    setHistoricoSaude((historicoSaudeDb.data ?? []).map(h => ({
+      id: h.id,
+      moradorId: h.morador_id,
+      data: h.data,
+      peso: h.peso,
+      altura: h.altura,
+      dum: h.dum || '',
+      observacoes: h.observacoes || ''
+    })))
 
     // Configuracoes — tabela pode ainda não existir no banco
     const configuracoesDb = await supabase.from('configuracoes').select('*').eq('usuario_id', userIdAtual).maybeSingle()
@@ -1406,14 +1438,13 @@ function App() {
     return {
       titulo: `Relatório de indicadores - ${grupoRelatorio}`,
       subtitulo: `${moradoresRelatorio.length} morador(es) no grupo`,
-      colunas: ['Nome', 'CPF', 'Idade', 'Família', 'Endereço', 'Pendência'],
+      colunas: ['Nome', 'CPF', 'Idade', 'Família', 'Endereço'],
       linhas: moradoresRelatorio.map((morador) => [
         morador.nome,
         morador.cpf ? formatarCPF(morador.cpf) : '-',
         morador.idade,
         morador.familia,
         morador.endereco,
-        pendenciaMorador(morador),
       ]),
     }
   }, [familiasRelatorio, grupoRelatorio, moradoresRelatorio, tipoRelatorio, vacinasRelatorio, visitasRelatorio])
@@ -1681,6 +1712,11 @@ function App() {
       return
     }
 
+    const cns = String(dados.get('cns')).replace(/\D/g, '')
+    const nis = String(dados.get('nis')).replace(/\D/g, '')
+    const peso = Number(String(dados.get('peso')).replace(',', '.'))
+    const altura = Number(String(dados.get('altura')).replace(',', '.'))
+
     if (cns && cns.length !== 15) {
       alert('Informe um CNS com 15 dígitos ou deixe em branco.')
       return
@@ -1758,7 +1794,7 @@ function App() {
         usa_remedio_controlado: novo.remedioControlado,
         vacina_em_dia: novo.vacinaEmDia,
         observacoes_gerais: novo.observacoes,
-        // dum sera adicionado aqui apos executar a migration SQL no Supabase
+        dum: novo.dum || null,
       }
       const query = moradorEditando
         ? supabase.from('moradores').update(payload).eq('id', moradorEditando.id).select().single()
@@ -1769,23 +1805,31 @@ function App() {
         return
       }
       const moradorSalvo = mapMorador(data)
-      if (novo.remedioControlado && novo.medicamento) {
-        const { data: remediosAtualizados } = await supabase
-          .from('medicamentos')
-          .update({ nome_medicamento: novo.medicamento, uso_continuo: true })
-          .eq('usuario_id', usuarioAtual)
-          .eq('morador_id', moradorSalvo.id)
-          .select('id')
-        if (!remediosAtualizados?.length) await supabase.from('medicamentos').insert({
+      const moradorIdFinal = moradorSalvo.id
+
+      if ((novo.peso && Number(novo.peso) > 0) || (novo.altura && Number(novo.altura) > 0)) {
+        const payloadHistorico = {
           usuario_id: usuarioAtual,
-          morador_id: moradorSalvo.id,
-          nome_medicamento: novo.medicamento,
-          uso_continuo: true,
-        })
-        moradorSalvo.medicamento = novo.medicamento
-      } else if (moradorEditando) {
-        await supabase.from('medicamentos').delete().eq('usuario_id', usuarioAtual).eq('morador_id', moradorSalvo.id)
+          morador_id: moradorIdFinal,
+          data: isoHoje,
+          peso: novo.peso ? Number(novo.peso) : null,
+          altura: novo.altura ? Number(novo.altura) : null,
+          dum: novo.dum || null,
+          observacoes: 'Registro automático via cadastro/edição'
+        }
+        await supabase.from('historico_saude').insert(payloadHistorico)
+        const novoHist: HistoricoSaude = {
+          id: Date.now(),
+          moradorId: moradorIdFinal,
+          data: isoHoje,
+          peso: novo.peso || '',
+          altura: novo.altura || '',
+          dum: novo.dum || '',
+          observacoes: 'Registro automático'
+        }
+        setHistoricoSaude(prev => [novoHist, ...prev])
       }
+
       setMoradores((atuais) => moradorEditando ? atuais.map((item) => String(item.id) === String(moradorSalvo.id) ? moradorSalvo : item) : [...atuais, moradorSalvo])
       mostrarToast(moradorEditando ? 'Dados do morador atualizados!' : 'Morador cadastrado!')
       setMoradorEditando(null)
@@ -2107,7 +2151,6 @@ function App() {
     const doc = new jsPDF({ orientation: 'landscape' })
     const largura = doc.internal.pageSize.getWidth()
     const altura = doc.internal.pageSize.getHeight()
-    const totalPendencias = moradoresDetalhados.filter((morador) => pendenciaMorador(morador) !== 'Em dia').length
 
     doc.setFillColor(13, 63, 37)
     doc.rect(0, 0, largura, 34, 'F')
@@ -2124,7 +2167,6 @@ function App() {
       ['Famílias', familias.length],
       ['Moradores', moradores.length],
       ['Visitas', visitas.length],
-      ['Pendências', totalPendencias],
     ]
     cards.forEach(([label, valor], index) => {
       const x = 14 + index * 48
@@ -2711,11 +2753,14 @@ function App() {
             <CrudCard title={moradorEditando ? 'Editar Morador' : 'Novo Morador'}>
               <form className="morador-form" onSubmit={adicionarMorador} key={moradorEditando?.id ?? 'novo-morador'}>
                 <div className="form-steps-nav">
-                  {[1, 2, 3].map(p => (
-                    <button key={p} type="button" className={`step-dot ${passoMorador === p ? 'active' : ''}`} onClick={() => setPassoMorador(p)}>
-                      {p === 1 ? '🆔 Identificação' : p === 2 ? '🏠 Vínculo' : '🏥 Saúde'}
-                    </button>
-                  ))}
+                  {[1, 2, 3, 4].map(p => {
+                    if (p === 4 && !moradorEditando) return null
+                    return (
+                      <button key={p} type="button" className={`step-dot ${passoMorador === p ? 'active' : ''}`} onClick={() => setPassoMorador(p)}>
+                        {p === 1 ? '🆔 Identificação' : p === 2 ? '🏠 Vínculo' : p === 3 ? '🏥 Saúde' : '📈 Histórico'}
+                      </button>
+                    )
+                  })}
                 </div>
 
                 <div className={`form-step animate-in${passoMorador === 1 ? '' : ' form-step--hidden'}`}>
@@ -2724,7 +2769,7 @@ function App() {
                     <input name="nome" placeholder="Ex.: Maria Souza" defaultValue={moradorEditando?.nome ?? ''} required />
                   </label>
                   <label>
-                    CPF <small className="ajuda-tooltip">(Opcional)</small>
+                    CPF
                     <input name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" defaultValue={moradorEditando?.cpf ? formatarCPF(moradorEditando.cpf) : ''} />
                   </label>
                   <label>
@@ -2738,10 +2783,6 @@ function App() {
                       <option value="Masculino">Masculino</option>
                       <option value="Outro">Outro</option>
                     </select>
-                  </label>
-                  <label>
-                    Telefone
-                    <input name="telefone" placeholder="(00) 00000-0000" defaultValue={moradorEditando?.telefone ?? ''} />
                   </label>
                   <button type="button" className="primary-button outline" onClick={(e) => {
                     const step = e.currentTarget.closest('.form-step')
@@ -2764,11 +2805,11 @@ function App() {
                     </select>
                   </label>
                   <label>
-                    CNS <small className="ajuda-tooltip">(Cartão SUS)</small>
+                    CNS
                     <input name="cns" inputMode="numeric" maxLength={15} placeholder="000 0000 0000 0000" defaultValue={moradorEditando?.cns ?? ''} />
                   </label>
                   <label>
-                    NIS <small className="ajuda-tooltip">(Bolsa Família)</small>
+                    NIS
                     <input name="nis" inputMode="numeric" maxLength={14} placeholder="Número do NIS" defaultValue={moradorEditando?.nis ?? ''} />
                   </label>
                   <div className="two-column-small">
@@ -2795,7 +2836,6 @@ function App() {
                 </div>
 
                 <div className={`form-step animate-in${passoMorador === 3 ? '' : ' form-step--hidden'}`}>
-                  <p className="step-hint">Marque as condições de saúde deste morador:</p>
                   <CheckGrid
                     items={[
                       ['hipertenso', 'Hipertenso'],
@@ -2803,35 +2843,36 @@ function App() {
                       ['gestante', 'Gestante'],
                       ['preNatalEmDia', 'Pré-natal em dia'],
                       ['bolsaFamilia', 'Bolsa Família'],
-                      ['responsavelFamiliar', 'Responsável familiar'],
                       ['remedioControlado', 'Remédio controlado'],
-                      ['vacinaEmDia', 'Vacina em dia'],
                     ]}
                     values={moradorEditando ?? undefined}
                   />
                   <label>
-                    DUM (Data da Última Menstruação)
+                    DUM
                     <input name="dum" type="date" defaultValue={moradorEditando?.dum ?? ''} />
                   </label>
                   <label>
-                    Medicamento controlado
+                    Medicamento
                     <input name="medicamento" placeholder="Nome do medicamento" defaultValue={moradorEditando?.medicamento ?? ''} />
-                  </label>
-                  <label>
-                    Observações gerais
-                    <textarea name="observacoes" placeholder="Outras informações" defaultValue={moradorEditando?.observacoes ?? ''} />
                   </label>
                   <div className="form-actions-between">
                     <button type="button" className="secondary-button" onClick={() => setPassoMorador(2)}>← Voltar</button>
-                    <button className="primary-button">{moradorEditando ? 'Atualizar Morador' : 'Finalizar Cadastro'}</button>
+                    <button className="primary-button">{moradorEditando ? 'Atualizar Morador' : 'Salvar'}</button>
                   </div>
                 </div>
-                
-                {moradorEditando && (
-                  <div className="form-actions center mt-1">
-                    <button className="secondary-button mini" type="button" onClick={() => setMoradorEditando(null)}>
-                      Cancelar edição
-                    </button>
+
+                {moradorEditando && passoMorador === 4 && (
+                  <div className="form-step animate-in">
+                    <p className="step-hint">Histórico de Evolução</p>
+                    <div className="history-list">
+                      {historicoSaude.filter(h => String(h.moradorId) === String(moradorEditando?.id)).map(h => (
+                        <div key={h.id} className="history-item">
+                          <span>{formatarData(h.data)}</span>
+                          <span>{h.peso}kg / {h.altura}m</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" className="secondary-button" onClick={() => setPassoMorador(1)}>Voltar</button>
                   </div>
                 )}
               </form>
