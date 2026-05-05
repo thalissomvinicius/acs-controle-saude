@@ -2359,28 +2359,51 @@ h1, h2, h3, strong {
 }
 
 .modal-large {
-  max-width: 800px;
+  max-width: 900px;
   width: 95%;
 }
 
+.familia-check-section {
+  background: var(--slate-50);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
 .familia-check-title {
-  margin: 10px 0 5px 0;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 5px;
-  color: var(--green-600);
-  font-weight: 600;
+  margin: 0 0 12px 0;
+  border-bottom: 2px solid var(--green-100);
+  padding-bottom: 8px;
+  color: var(--green-800);
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 .checkbox-grid-mini {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 12px;
 }
 
 .check-label-mini {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  line-height: 1.2;
   display: flex;
-  align-items: center;
-  gap: 6px;
+  align-items: flex-start;
+  gap: 8px;
   cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  color: var(--slate-700);
+}
+
+.check-label-mini:hover {
+  background: white;
+  color: var(--green-700);
+}
+
+.check-label-mini input {
+  margin-top: 2px;
 }
