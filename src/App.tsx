@@ -45,6 +45,7 @@ type Tela =
   | 'indicadores'
   | 'relatorios'
   | 'configuracoes'
+  | 'historico'
 type ModoAuth = 'entrar' | 'cadastro' | 'recuperar'
 
 type HistoricoSaude = {
@@ -57,7 +58,7 @@ type HistoricoSaude = {
   observacoes: string
 }
 
-type TipoRelatorio = 'indicadores' | 'familias' | 'visitas' | 'vacinas'
+type TipoRelatorio = 'indicadores' | 'familias' | 'visitas' | 'vacinas' | 'evolucao'
 
 type EntityId = string | number
 
@@ -535,6 +536,7 @@ const menuGrupos = [
     grupo: 'Acompanhamento',
     itens: [
       { id: 'visitas' as Tela, label: 'Visitas', icon: CalendarCheck },
+      { id: 'historico' as Tela, label: 'Evolução', icon: TrendingUp },
       { id: 'vacinas' as Tela, label: 'Vacinas', icon: Syringe },
     ],
   },
@@ -1419,6 +1421,34 @@ function App() {
       }
     }
 
+    if (tipoRelatorio === 'evolucao') {
+      const historicosFiltrados = historicoSaude.filter(h => {
+        const morador = moradores.find(m => String(m.id) === String(h.moradorId))
+        if (!morador) return false
+        if (relatorioLogradouro && String(morador.logradouroId) !== String(relatorioLogradouro)) return false
+        if (relatorioInicio && h.data < relatorioInicio) return false
+        if (relatorioFim && h.data > relatorioFim) return false
+        return true
+      })
+
+      return {
+        titulo: 'Relatório de Evolução de Saúde',
+        subtitulo: `${historicosFiltrados.length} medições no período`,
+        colunas: ['Data', 'Morador', 'Peso', 'Altura', 'DUM', 'Obs'],
+        linhas: historicosFiltrados.map(h => {
+          const morador = moradores.find(m => String(m.id) === String(h.moradorId))
+          return [
+            formatarData(h.data),
+            morador?.nome || '-',
+            h.peso ? `${h.peso}kg` : '-',
+            h.altura ? `${h.altura}m` : '-',
+            h.dum ? formatarData(h.dum) : '-',
+            h.observacoes || '-'
+          ]
+        })
+      }
+    }
+
     return {
       titulo: `Relatório de indicadores - ${grupoRelatorio}`,
       subtitulo: `${moradoresRelatorio.length} morador(es) no grupo`,
@@ -1431,7 +1461,7 @@ function App() {
         morador.endereco,
       ]),
     }
-  }, [familiasRelatorio, grupoRelatorio, moradoresRelatorio, tipoRelatorio, vacinasRelatorio, visitasRelatorio])
+  }, [familiasRelatorio, grupoRelatorio, moradoresRelatorio, tipoRelatorio, vacinasRelatorio, visitasRelatorio, historicoSaude, relatorioLogradouro, relatorioInicio, relatorioFim, moradores])
 
   async function entrar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -3033,6 +3063,7 @@ function App() {
                       <option value="familias">Famílias e domicílios</option>
                       <option value="visitas">Visitas domiciliares</option>
                       <option value="vacinas">Vacinas</option>
+                      <option value="evolucao">Evolução de Saúde</option>
                     </select>
                   </label>
                   {tipoRelatorio === 'indicadores' && (
@@ -3054,7 +3085,7 @@ function App() {
                       ))}
                     </select>
                   </label>
-                  {(tipoRelatorio === 'visitas' || tipoRelatorio === 'vacinas') && (
+                  {(tipoRelatorio === 'visitas' || tipoRelatorio === 'vacinas' || tipoRelatorio === 'evolucao') && (
                     <>
                       <label>
                         Início
@@ -3066,7 +3097,7 @@ function App() {
                       </label>
                     </>
                   )}
-                  {tipoRelatorio !== 'indicadores' && (
+                  {tipoRelatorio !== 'indicadores' && tipoRelatorio !== 'evolucao' && (
                     <label>
                       Status
                       <select value={relatorioStatus} onChange={(event) => setRelatorioStatus(event.target.value)}>
@@ -3149,6 +3180,62 @@ function App() {
                 </div>
               </section>
             </div>
+          </section>
+        )}
+
+        {tela === 'historico' && (
+          <section className="screen animate-in">
+            <div className="screen-title">
+              <div>
+                <p className="eyebrow">Acompanhamento Físico</p>
+                <h2>Evolução de Saúde</h2>
+              </div>
+              <div className="header-actions">
+                <button className="primary-button" onClick={() => { setTipoRelatorio('evolucao'); navegarPara('relatorios'); }}>
+                   <Download size={17} /> Relatório de Evolução
+                </button>
+              </div>
+            </div>
+
+            <CrudCard title="Todas as Medições">
+              <div className="table-responsive">
+                <table className="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Morador</th>
+                      <th>Peso</th>
+                      <th>Altura</th>
+                      <th>DUM</th>
+                      <th>Obs</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historicoSaude
+                      .filter(h => {
+                        const m = moradores.find(it => String(it.id) === String(h.moradorId))
+                        return !busca || m?.nome.toLowerCase().includes(busca.toLowerCase())
+                      })
+                      .map(h => {
+                        const m = moradores.find(it => String(it.id) === String(h.moradorId))
+                        return (
+                          <tr key={h.id}>
+                            <td><strong>{formatarData(h.data)}</strong></td>
+                            <td>{m?.nome}</td>
+                            <td>{h.peso ? `${h.peso}kg` : '-'}</td>
+                            <td>{h.altura ? `${h.altura}m` : '-'}</td>
+                            <td>{h.dum ? formatarData(h.dum) : '-'}</td>
+                            <td><small>{h.observacoes}</small></td>
+                          </tr>
+                        )
+                      })}
+                    {historicoSaude.length === 0 && (
+                      <tr><td colSpan={6} className="center-text">Nenhum registro de evolução.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CrudCard>
           </section>
         )}
 
