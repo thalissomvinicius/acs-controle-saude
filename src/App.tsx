@@ -562,6 +562,7 @@ const caminhoPorTela: Record<Tela, string> = {
   indicadores: '/indicadores',
   relatorios: '/relatorios',
   configuracoes: '/configuracoes',
+  historico: '/evolucao',
 }
 
 const telaPorCaminho = Object.entries(caminhoPorTela).reduce<Record<string, Tela>>((acc, [telaAtual, caminho]) => {
@@ -1423,7 +1424,7 @@ function App() {
 
     if (tipoRelatorio === 'evolucao') {
       const historicosFiltrados = historicoSaude.filter(h => {
-        const morador = moradores.find(m => String(m.id) === String(h.moradorId))
+        const morador = moradoresDetalhados.find(m => String(m.id) === String(h.moradorId))
         if (!morador) return false
         if (relatorioLogradouro && String(morador.logradouroId) !== String(relatorioLogradouro)) return false
         if (relatorioInicio && h.data < relatorioInicio) return false
@@ -1436,7 +1437,7 @@ function App() {
         subtitulo: `${historicosFiltrados.length} medições no período`,
         colunas: ['Data', 'Morador', 'Peso', 'Altura', 'DUM', 'Obs'],
         linhas: historicosFiltrados.map(h => {
-          const morador = moradores.find(m => String(m.id) === String(h.moradorId))
+          const morador = moradoresDetalhados.find(m => String(m.id) === String(h.moradorId))
           return [
             formatarData(h.data),
             morador?.nome || '-',
