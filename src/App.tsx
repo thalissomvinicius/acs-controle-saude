@@ -2319,15 +2319,6 @@ function App() {
       }
       doc.text(txt, xPos + 4, yPos - 0.2)
     })
-    
-    // Linha de separação entre blocos
-    if (y < 130) { // Não desenhar na última
-      doc.setDrawColor(180)
-      doc.setLineWidth(0.1)
-      doc.setLineDashPattern([2, 2], 0)
-      doc.line(x, y + altura + 1, x + largura, y + altura + 1)
-      doc.setLineDashPattern([], 0)
-    }
   }
 
   function exportarExcel() {
