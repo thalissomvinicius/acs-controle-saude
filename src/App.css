@@ -2450,3 +2450,12 @@ h1, h2, h3, strong {
   font-weight: 600;
   color: var(--slate-600);
 }
+
+.icon-action.info {
+  color: #3b82f6; /* Blue-500 */
+}
+
+.icon-action.info:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}

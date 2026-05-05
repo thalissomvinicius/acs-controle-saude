@@ -2843,16 +2843,25 @@ function App() {
 
                 {moradorEditando && passoMorador === 4 && (
                   <div className="form-step animate-in">
-                    <p className="step-hint">Histórico de Evolução</p>
+                    <p className="step-hint">Linha do Tempo de Evolução</p>
                     <div className="history-list">
-                      {historicoSaude.filter(h => String(h.moradorId) === String(moradorEditando?.id)).map(h => (
-                        <div key={h.id} className="history-item">
-                          <span>{formatarData(h.data)}</span>
-                          <span>{h.peso}kg / {h.altura}m</span>
-                        </div>
-                      ))}
+                      {historicoSaude.filter(h => String(h.moradorId) === String(moradorEditando?.id)).length > 0 ? (
+                        historicoSaude
+                          .filter(h => String(h.moradorId) === String(moradorEditando?.id))
+                          .map(h => (
+                            <div key={h.id} className="history-item">
+                              <span>📅 {formatarData(h.data)}</span>
+                              <span>⚖️ {h.peso}kg / 📏 {h.altura}m</span>
+                            </div>
+                          ))
+                      ) : (
+                        <p className="empty-state">Nenhuma medição registrada ainda.</p>
+                      )}
                     </div>
-                    <button type="button" className="secondary-button" onClick={() => setPassoMorador(1)}>Voltar</button>
+                    <div className="form-actions-between mt-1">
+                      <button type="button" className="secondary-button" onClick={() => setPassoMorador(1)}>← Voltar</button>
+                      <button type="button" className="primary-button" onClick={() => setMoradorEditando(null)}>Fechar</button>
+                    </div>
                   </div>
                 )}
               </form>
@@ -2863,6 +2872,10 @@ function App() {
                 titulo="Lista"
                 onEdit={editarMorador}
                 onDelete={excluirMorador}
+                onViewHistory={(m) => {
+                  setMoradorEditando(m)
+                  setPassoMorador(4)
+                }}
                 onVaccines={(morador) => {
                   setMoradorVacinaId(morador.id)
                   navegarPara('vacinas')
@@ -3414,6 +3427,7 @@ function ListaMoradores({
   onEdit?: (morador: Morador) => void
   onDelete?: (id: EntityId) => void
   onVaccines?: (morador: Morador) => void
+  onViewHistory?: (morador: Morador) => void
 }) {
   return (
     <section className="panel">
@@ -3436,6 +3450,11 @@ function ListaMoradores({
                   {onVaccines && (
                     <button className="icon-action" type="button" onClick={() => onVaccines(morador)} aria-label="Abrir caderneta vacinal">
                       <Syringe size={17} />
+                    </button>
+                  )}
+                  {onViewHistory && (
+                    <button className="icon-action info" type="button" onClick={() => onViewHistory(morador)} title="Ver evolução (Histórico)">
+                      <TrendingUp size={17} />
                     </button>
                   )}
                   {onEdit && (
