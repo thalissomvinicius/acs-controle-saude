@@ -936,8 +936,11 @@ function App() {
   const [opcoesFicha, setOpcoesFicha] = useState({
     data: isoHoje,
     acsNome: 'Adriellen Guimarães',
-    indicesMarcados: [] as number[]
+    unidadeSaude: '',
+    indicesMarcados: [] as number[],
+    indicesPorFamilia: {} as Record<string, number[]>, // Novo: armazena por ID da família
   })
+  const [passoFicha, setPassoFicha] = useState(1) // 1: Geral, 2: Famílias
   const [configuracoesSalvas, setConfiguracoesSalvas] = useState('')
   const [mensagemConfiguracoes, setMensagemConfiguracoes] = useState('')
   const [novaSenha, setNovaSenha] = useState('')
@@ -1060,7 +1063,11 @@ function App() {
 
     const { error } = await supabase.from('usuarios').upsert(perfil, { onConflict: 'id' })
     if (error) console.warn('Não foi possível sincronizar perfil do usuário:', error.message)
-  }, [configuracoes.microarea, configuracoes.unidadeSaude])
+  useEffect(() => {
+    if (configuracoes.unidadeSaude && !opcoesFicha.unidadeSaude) {
+      setOpcoesFicha(prev => ({ ...prev, unidadeSaude: configuracoes.unidadeSaude }))
+    }
+  }, [configuracoes.unidadeSaude, opcoesFicha.unidadeSaude])
 
   const carregarDados = useCallback(async (userIdAtual: string) => {
     if (!supabase) return
@@ -2175,7 +2182,7 @@ function App() {
     const margemX = 10
     const margemY = 8
     const espacamentoVertical = 4
-    const { data: dataFicha, acsNome, indicesMarcados } = opcoesFicha
+    const { data: dataFicha, acsNome, unidadeSaude, indicesPorFamilia } = opcoesFicha
     const alturaBloco = (alturaDoc - (margemY * 2) - (espacamentoVertical * 2)) / 3
 
     // Filtrar moradores baseado no filtro de logradouro selecionado
@@ -2213,8 +2220,12 @@ function App() {
 
         const moradoresChunk = blocks[blockIndex] || []
         const yBase = margemY + b * (alturaBloco + espacamentoVertical)
+        
+        // Pega os índices marcados especificamente para esta família
+        const familiaId = moradoresChunk[0]?.familiaId ? String(moradoresChunk[0].familiaId) : 'vazio'
+        const marcadosDestaFamilia = indicesPorFamilia[familiaId] || []
 
-        desenharBlocoFicha(doc, yBase, larguraDoc - (margemX * 2), alturaBloco, moradoresChunk, margemX, dataFicha, acsNome, indicesMarcados)
+        desenharBlocoFicha(doc, yBase, larguraDoc - (margemX * 2), alturaBloco, moradoresChunk, margemX, dataFicha, acsNome, unidadeSaude, marcadosDestaFamilia)
       }
     }
 
@@ -2222,7 +2233,7 @@ function App() {
     setModalFichaAberta(false)
   }
 
-  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: (typeof moradoresDetalhados)[number][], x: number, dataFicha: string, acsNome: string, indicesMarcados: number[]) {
+  function desenharBlocoFicha(doc: jsPDF, y: number, largura: number, altura: number, moradores: (MoradorDetalhado)[], x: number, dataFicha: string, acsNome: string, unidadeSaudeManual: string, indicesMarcados: number[]) {
     // Título Centralizado
     doc.setDrawColor(0)
     doc.setLineWidth(0.3)
@@ -2240,7 +2251,7 @@ function App() {
     doc.text(`FAMÍLIA: ${familiaInfo.toUpperCase()}`, x + largura, y + 9, { align: 'right' })
     
     doc.text(`NOME DO ACS QUE REALIZOU O ACOMPANHAMENTO: ${acsNome.toUpperCase()}`, x, y + 13)
-    doc.text(`NOME DA UNIDADE DE ABRANGÊNCIA: ${configuracoes.unidadeSaude.toUpperCase()}`, x + largura, y + 13, { align: 'right' })
+    doc.text(`NOME DA UNIDADE DE ABRANGÊNCIA: ${(unidadeSaudeManual || configuracoes.unidadeSaude).toUpperCase()}`, x + largura, y + 13, { align: 'right' })
 
     // Tabela - 6 linhas exatas
     const colunas = ['NIS', 'CNS', 'NOME COMPLETO DO CIDADÃO', 'D. NASC.', 'PESO', 'ALTURA', 'VACINAÇÃO?', 'GESTANTE?', 'DUM', 'PRÉ-NATAL?']
@@ -3207,45 +3218,84 @@ function App() {
 
       {modalFichaAberta && (
         <div className="modal-overlay">
-          <div className="modal-card animate-in">
+          <div className="modal-card animate-in" style={{ maxWidth: '800px', width: '95%' }}>
             <header className="modal-header">
-              <h2>Opções da Ficha Oficial</h2>
-              <button className="icon-button" onClick={() => setModalFichaAberta(false)} title="Fechar"><X /></button>
+              <h2>Opções da Ficha Oficial {passoFicha === 2 && '- Condicionalidades'}</h2>
+              <button className="icon-button" onClick={() => { setModalFichaAberta(false); setPassoFicha(1); }} title="Fechar"><X /></button>
             </header>
             <div className="modal-body">
-              <div className="form-grid">
-                <label>
-                  Data do acompanhamento
-                  <input type="date" value={opcoesFicha.data} onChange={e => setOpcoesFicha({...opcoesFicha, data: e.target.value})} />
-                </label>
-                <label>
-                  Nome do ACS
-                  <input placeholder="Nome completo" value={opcoesFicha.acsNome} onChange={e => setOpcoesFicha({...opcoesFicha, acsNome: e.target.value})} />
-                </label>
-              </div>
-              
-              <div className="checkbox-options-list">
-                <p><strong>Condicionalidades a serem marcadas:</strong></p>
-                {OPCOES_FICHA_CHECKBOXES.map((label, idx) => (
-                  <label key={idx} className="check-item">
-                    <input 
-                      type="checkbox" 
-                      checked={opcoesFicha.indicesMarcados.includes(idx)} 
-                      onChange={(e) => {
-                        const next = e.target.checked 
-                          ? [...opcoesFicha.indicesMarcados, idx]
-                          : opcoesFicha.indicesMarcados.filter(i => i !== idx)
-                        setOpcoesFicha({...opcoesFicha, indicesMarcados: next})
-                      }}
-                    />
-                    <span>{label}</span>
+              {passoFicha === 1 ? (
+                <div className="form-grid">
+                  <label>
+                    Data do acompanhamento
+                    <input type="date" value={opcoesFicha.data} onChange={e => setOpcoesFicha({...opcoesFicha, data: e.target.value})} />
                   </label>
-                ))}
-              </div>
+                  <label>
+                    Nome do ACS
+                    <input placeholder="Nome completo" value={opcoesFicha.acsNome} onChange={e => setOpcoesFicha({...opcoesFicha, acsNome: e.target.value})} />
+                  </label>
+                  <label className="full-width">
+                    Nome da Unidade de Saúde (Posto)
+                    <input placeholder="Ex: UBS Principal" value={opcoesFicha.unidadeSaude} onChange={e => setOpcoesFicha({...opcoesFicha, unidadeSaude: e.target.value})} />
+                  </label>
+                </div>
+              ) : (
+                <div className="familias-checkbox-list">
+                  <p className="hint-text">Selecione as condicionalidades para cada família individualmente:</p>
+                  <div className="accordion-list">
+                    {(() => {
+                      // Filtrar as famílias que serão impressas
+                      let morFiltrados = moradoresDetalhados
+                      if (relatorioLogradouro) {
+                        morFiltrados = moradoresDetalhados.filter(m => String(m.logradouroId) === String(relatorioLogradouro))
+                      }
+                      const famsNoRelatorio = Array.from(new Set(morFiltrados.map(m => m.familiaId)))
+                        .map(id => familiasComEndereco.find(f => String(f.id) === String(id)))
+                        .filter(f => !!f) as typeof familiasComEndereco
+
+                      return famsNoRelatorio.map(fam => (
+                        <div key={fam.id} className="familia-check-section">
+                          <h4 style={{ margin: '10px 0 5px 0', borderBottom: '1px solid #eee', paddingBottom: '5px', color: '#1f7a43' }}>
+                            Família: {fam.nome} - {fam.endereco}
+                          </h4>
+                          <div className="checkbox-grid-mini" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            {OPCOES_FICHA_CHECKBOXES.map((txt, idx) => (
+                              <label key={idx} style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                                <input 
+                                  type="checkbox"
+                                  checked={(opcoesFicha.indicesPorFamilia[String(fam.id)] || []).includes(idx)}
+                                  onChange={(e) => {
+                                    const atual = opcoesFicha.indicesPorFamilia[String(fam.id)] || []
+                                    const next = e.target.checked ? [...atual, idx] : atual.filter(i => i !== idx)
+                                    setOpcoesFicha({
+                                      ...opcoesFicha,
+                                      indicesPorFamilia: { ...opcoesFicha.indicesPorFamilia, [String(fam.id)]: next }
+                                    })
+                                  }}
+                                />
+                                {txt}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
             <footer className="modal-footer">
-              <button className="secondary-button" onClick={() => setModalFichaAberta(false)}>Cancelar</button>
-              <button className="primary-button" onClick={exportarFichaAcompanhamento}>Gerar PDF Agora</button>
+              {passoFicha === 1 ? (
+                <>
+                  <button className="secondary-button" onClick={() => setModalFichaAberta(false)}>Cancelar</button>
+                  <button className="primary-button" onClick={() => setPassoFicha(2)}>Próximo: Condicionalidades</button>
+                </>
+              ) : (
+                <>
+                  <button className="secondary-button" onClick={() => setPassoFicha(1)}>Voltar</button>
+                  <button className="primary-button" onClick={exportarFichaAcompanhamento}>Gerar PDF Agora</button>
+                </>
+              )}
             </footer>
           </div>
         </div>
